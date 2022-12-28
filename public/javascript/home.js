@@ -1,6 +1,6 @@
 window.onload = () => {
     const WorldID = 'World';
-    const server = io(`ws://192.168.0.9:8080?token=${localStorage.getItem('token')}`);
+    const server = io(`ws://localhost:8080?token=${localStorage.getItem('token')}`);
     const input = document.querySelector('#chat-input');
     const list = document.querySelector('.home-list');
     const send = document.querySelector('#chat-send');

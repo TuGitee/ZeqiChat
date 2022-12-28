@@ -53,7 +53,7 @@ app.use(async (ctx, next) => {
     await next();
 })
 
-app.listen(3000,'192.168.0.9');
+app.listen(3000);
 router.redirect('/', '/login');
 
 const start = require('./routers/Socket.io');
