@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/login.css">
+    <script src="javascript/axios.min.js"></script>
+    <script src="javascript/login.js"></script>
+    <script>
+        // 设置拦截器
+        axios.interceptors.request.use(function (config) {
+            return config;
+        });
+        axios.interceptors.response.use(function (response) {
+            const { authorization } = response.headers;
+            authorization && localStorage.setItem("token", authorization);
+            return response;
+        }, function (error) {
+            return Promise.reject(error);
+        }); 
+    </script>
+</head>
+<body>
+    <div class="login">
+        <div class="login-image"></div>
+        <div class="login-box">
+            <h1 class="login-box-title">登录</h1>
+            <div class="login-box-form">
+                <div>
+                    <label for="email">邮箱：</label>
+                    <input type="email" name="email" placeholder="email" id="email">
+                </div>
+                <div>
+                    <label for="password">密码：</label>
+                    <input type="password" name="password" placeholder="password" id="password">
+                </div>
+                <div>
+                    <input type="submit" class="form-button" value="登录" id="login">
+                </div>
+                <div>
+                    没有账号？<a href="/register">点我注册</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
