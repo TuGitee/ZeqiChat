@@ -7,11 +7,19 @@
     top: 0;
     bottom: 0;
     right: 0;
-    margin: auto;
+    margin: 0 auto;
     width: 800px;
     height: 500px;
     display: flex;
     overflow: hidden;
+    padding-top: constant(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
+}
+
+.register * {
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    -webkit-user-drag: none;
 }
 
 .register-image {
@@ -82,4 +90,53 @@
 
 #captcha {
     margin-right: 10px;
+    width: 50px;
+}
+
+@media screen and (max-width: 800px) {
+    .register {
+        width: 90%;
+        height: 100%;
+        border-radius: 10px;
+        padding: 20px;
+        flex-direction: column;
+    }
+    .register-image {
+        width: 100%;
+        height: 40%;
+        margin-bottom: 20px;
+        border-radius: 10px;
+    }
+    .register-box {
+        width: 100%;
+        height: 60%;
+        padding: 20px;
+    }
+    .register-box-form div label {
+        width: fit-content;
+        font-weight: 500;
+    }
+    .register-box-form div:nth-last-child(n+3) input {
+        outline: none;
+        border: none;
+        flex: 1;
+    }
+    .register-box-form div:nth-last-child(n+4) input {
+        border-bottom: 1px solid #000;
+    }
+    .register-box-form .form-button {
+        flex: 1;
+        height: 30px;
+        border-radius: 10px;
+        border: none;
+        color: white;
+        background-color: blueviolet;
+        width: 5rem;
+    }
+    .register-box-form .form-button:active {
+        background-color: #eee;
+        color: #000;
+        cursor: pointer;
+    }
+
 }

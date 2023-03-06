@@ -2,16 +2,35 @@
     width: 5px;
     height: 10px;
 }
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    outline: none;
+    font-family: 'Roboto', sans-serif;
+    user-select: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.home::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
 ::-webkit-scrollbar-track {
     background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
     background: #ccc;
     border-radius: 10px;
 }
 
-.home{
-    background: #fff;
+.home {
     border: 1px solid #ddd;
     border-radius: 10px;
     position: absolute;
@@ -25,31 +44,44 @@
     height: 500px;
     display: flex;
     overflow: hidden;
+    box-sizing: border-box;
+    padding-top: constant(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
 }
+
+.home::after {
+    content: "";
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -99;
+    background: url(../images/home.jpg) no-repeat center center;
+    background-size: cover;
+}
+
+.home * {
+    box-sizing: border-box;
+    outline: none;
+    font-family: 'Roboto', sans-serif;
+    user-select: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
 .home-list {
     position: relative;
     padding: 0;
     margin: 0;
     list-style: none;
     width: 30%;
-    height: 100%;
-    background: linear-gradient(to right,#fff0, #fff);
-    display: flex;
-    flex-direction: column;
+    background: linear-gradient(to right, #fff0, #fff);
+    overflow-y: overlay;
 }
-.home-list::before {
-    content: '';
-    display: block;
-    position: absolute;
-    z-index: -1;
-    height: 100%;
-    width: 100%;
-    top: 0;
-    left: 0;
-    object-fit: cover;
-    background: url(../images/home.jpg) no-repeat center center;
-    background-size: cover;
-}
+
 .home-list .home-list-item {
     display: flex;
     align-items: center;
@@ -86,6 +118,7 @@
     border-left: 1px solid #ddd;
     text-align: center;
 }
+
 .home-content .home-content-title {
     height: 60px;
     width: 100%;
@@ -99,6 +132,7 @@
     font-weight: bold;
     text-align: left;
 }
+
 .home-content .home-content-content {
     flex: 1;
     width: 100%;
@@ -115,16 +149,43 @@
     padding-bottom: 5px;
     margin-bottom: 5px;
 }
-.home-content .home-content-content-item .home-content-content-item-msg {
-    max-width: 70%;
+
+.home-content .home-content-content-item__me {
+    flex-direction: row-reverse;
+}
+
+.home-content .home-content-content-item__me .home-content-content-item-msg {
+    margin-right: 10px;
+    text-align: right;
+}
+
+.home-content .home-content-content-item__other .home-content-content-item-msg {
     margin-left: 10px;
+    text-align: left;
 }
 
-.home-content .home-content-content-item:nth-child(n):not(:last-child) {
-    border-bottom: 1px solid #eee;
+.home-content .home-content-content-item-msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 70%;
 }
 
-.home-content-content-item-avatar{
+.home-content .home-content-content-item-msg-username {
+    font-weight: 700;
+    font-size: 12px;
+    color: #999;
+    line-height: 2;
+}
+
+.home-content .home-content-content-item-msg-content {
+    background: #ddd;
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+.home-content-content-item-avatar {
     height: 50px;
     width: 50px;
     border-radius: 10px;
@@ -134,20 +195,60 @@
 }
 
 .home-content .home-content-input {
-    height: 40px;
+    height: 60px;
     width: 100%;
     border-top: 1px solid #ddd;
     display: flex;
     align-items: center;
     justify-content: center;
 }
+
 #chat-input {
     flex: 1;
     outline: none;
     border: none;
     padding: 0px 10px;
+    user-select: all;
+    -webkit-user-select: all;
+    -moz-user-select: all;
+    -ms-user-select: all;
 }
+
 #chat-send {
     margin-right: 10px;
     width: 80px;
+    border-radius: 10px;
+    border: none;
+    height: 50%;
+}
+
+#logout {
+    text-decoration: none;
+    font-size: 14px;
+    background-color: rgba(255, 0, 0, 0.5);
+    padding: 8px 10px;
+    color: white;
+    border-radius: 10px;
+    font-weight: 400;
+}
+
+@media screen and (max-width: 600px) {
+    .home {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        flex-direction: column;
+        position: static;
+    }
+
+    .home-list {
+        width: 100%;
+    }
+
+    .home-content {
+        height: calc(100vh - 300px);
+        width: 100%;
+        display: none;
+    }
+
 }

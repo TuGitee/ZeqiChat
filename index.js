@@ -1,6 +1,6 @@
 const Koa = require('koa');
 const app = new Koa();
-const static = require('koa-static');
+const m_static = require('koa-static');
 const path = require('path');
 const bodyparser = require('koa-bodyparser');
 const views = require('koa-views');
@@ -8,8 +8,8 @@ const session = require('koa-session-minimal')
 const JWT = require('./utils/JWT');
 
 app.use(bodyparser());
-app.use(static(path.join(__dirname, 'public')));
-app.use(views(path.join(__dirname, 'views'), { extension: 'ejs' }));
+app.use(m_static(path.join(__dirname, 'public')));
+app.use(views(path.join(__dirname, 'public/html'), { map: { html: 'ejs' } }));
 
 app.use(session({
     key: 'captcha',
@@ -53,10 +53,15 @@ app.use(async (ctx, next) => {
     await next();
 })
 
-app.listen(3000);
+app.listen(3000,'0.0.0.0',()=>{
+    const open = require('open');
+    open('http://localhost:3000');
+});
 router.redirect('/', '/login');
 
 const start = require('./routers/Socket.io');
 const server = require('http').createServer(app);
 start(server);
-server.listen(8080);
+server.listen(8080,'0.0.0.0',()=>{
+    console.log('server is running');
+});

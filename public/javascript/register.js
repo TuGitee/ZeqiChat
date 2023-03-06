@@ -1,10 +1,10 @@
-window.onload = () => {
+
     const register = document.getElementById('register');
     const CaptchaButton = document.getElementById('CaptchaButton');
     CaptchaButton.onclick = () => {
         CaptchaButton.disabled = true;
         CaptchaButton.style.filter=`brightness(0.7)`
-        let seconds = 60;
+        let seconds = 10;
         CaptchaButton.style.pointerEvents = 'none';
         CaptchaButton.innerHTML = `获取验证码(${seconds}s)`;
         let timer = setInterval(() => {
@@ -59,4 +59,3 @@ window.onload = () => {
             console.log(error);
         });
     }
-}

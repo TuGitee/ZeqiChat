@@ -20,8 +20,19 @@ const receiver = (to,captcha) => {
         <p>此邮件为系统自动发送,请勿回复</p>
         <p>感谢您的使用</p>
         <p>即刻聊天项目组</p>
-        <p>${new Date()}</p>
+        <p>${getTime()}</p>
         `,
     }
+}
+
+function getTime(){
+    const date = new Date()
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    const hour = date.getHours()
+    const minute = date.getMinutes()
+    const second = date.getSeconds()
+    return `${year}年${month}月${day}日 ${hour}:${minute}:${second}`
 }
 module.exports = {transporter,receiver}
