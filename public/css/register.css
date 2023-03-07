@@ -7,7 +7,7 @@
     top: 0;
     bottom: 0;
     right: 0;
-    margin: 0 auto;
+    margin: auto;
     width: 800px;
     height: 500px;
     display: flex;
@@ -97,9 +97,10 @@
     .register {
         width: 90%;
         height: 100%;
-        border-radius: 10px;
         padding: 20px;
         flex-direction: column;
+        margin-top: 10px;
+        border: none;
     }
     .register-image {
         width: 100%;

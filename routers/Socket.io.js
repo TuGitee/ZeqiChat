@@ -1,7 +1,7 @@
 const JWT=require('../utils/JWT');
 const pool=require('../config/pool');
 
-const WorldID = 'World';
+const WorldID = 'd29ybGQ=';
 
 function start(server){
     const io=require('socket.io')(server,{cors:true});
@@ -22,8 +22,8 @@ function start(server){
         })
         socket.on(WebSocketType.PrivateChat, (data) => {
             io.sockets.sockets.forEach(item => {
-                if (item.user.id === data.to) {
-                    item.emit(WebSocketType.PrivateChat, createMessage(data.user, data.msg, socket.user.avatar, socket.user.id))
+                if (item.user.id === Number(data.to)) {
+                    item.emit(WebSocketType.PrivateChat, createMessage(data.user, data.msg, socket.user.avatar,String(socket.user.id)))
                     pool.query('insert into private (from_id,to_id,message) values (?,?,?)',[socket.user.id,item.user.id,data.msg])
                 }
             })

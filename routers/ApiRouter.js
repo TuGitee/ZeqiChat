@@ -18,11 +18,17 @@ router.post('/register', upload.single('avatar'), async (ctx, next) => {
         ctx.body = { ok: 0, msg: '两次密码不一致' };
         return;
     }
-    const user = await pool.query('SELECT * FROM users WHERE email=?', [email]);
-    if (user[0].length !== 0) {
+    const userEmail = await pool.query('SELECT * FROM users WHERE email=?', [email]);
+    if (userEmail[0].length !== 0) {
         ctx.body = { ok: 0, msg: '邮箱已被注册' };
         return;
     }
+    const userUsername = await pool.query('SELECT * FROM users WHERE username=?', [username]);
+    if (userUsername[0].length !== 0) {
+        ctx.body = { ok: 0, msg: '用户名重复！' };
+        return;
+    }
+
     const avatar = ctx.file ? `/uploads/${ctx.file.filename}` : `/images/default_avatar.png`
     pool.query('INSERT INTO users (email,username,password,avatar) VALUES (?,?,?,?)', [email, username, password, avatar])
     ctx.session.captcha = null;

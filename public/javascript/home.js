@@ -4,6 +4,7 @@ window.onload = () => {
     const server = io(`ws://${ip}:8080?token=${localStorage.getItem('token')}`);
     const input = document.querySelector('#chat-input');
     const list = document.querySelector('.home-list');
+    const onlineUser = [];
     const send = document.querySelector('#chat-send');
     const contentList = document.querySelector('#chat-content');
     const title = document.querySelector('.home-content-title-name');
@@ -33,8 +34,13 @@ window.onload = () => {
 
     server.on(WebSocketType.GroupList, (data) => {
         data = data.data;
+        data.map(item=>{
+            if(onlineUser.map(item=>item.id).indexOf(item.id) === -1){
+                onlineUser.push(item);
+            }
+        })
         list.innerHTML = `<li class="home-list-item" data-value="${WorldID}"><img src="/images/world.jpg" alt="" class="home-list-item-avatar">
-            <span class="home-list-item-username">World</span></li>` + data.map(item => `<li class="home-list-item" data-value="${item.id}">
+            <span class="home-list-item-username">World</span></li>` + onlineUser.map(item => `<li class="home-list-item" data-value="${item.id}">
             <img src="${item.avatar}" alt="" class="home-list-item-avatar">
             <span class="home-list-item-username">${item.username}</span>
             </li>`).join('')
