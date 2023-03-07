@@ -4,11 +4,12 @@ window.onload = () => {
     const server = io(`ws://${ip}:8080?token=${localStorage.getItem('token')}`);
     const input = document.querySelector('#chat-input');
     const list = document.querySelector('.home-list');
-    const onlineUser = [];
     const send = document.querySelector('#chat-send');
     const contentList = document.querySelector('#chat-content');
     const title = document.querySelector('.home-content-title-name');
+    title.innerHTML = 'World';
     let to = '';
+    let onlineList = [];
 
 
     const logout = document.querySelector('#logout');
@@ -33,16 +34,20 @@ window.onload = () => {
     server.emit(WebSocketType.GroupList);
 
     server.on(WebSocketType.GroupList, (data) => {
-        data = data.data;
-        data.map(item=>{
-            if(onlineUser.map(item=>item.id).indexOf(item.id) === -1){
-                onlineUser.push(item);
-            }
-        })
-        list.innerHTML = `<li class="home-list-item" data-value="${WorldID}"><img src="/images/world.jpg" alt="" class="home-list-item-avatar">
-            <span class="home-list-item-username">World</span></li>` + onlineUser.map(item => `<li class="home-list-item" data-value="${item.id}">
-            <img src="${item.avatar}" alt="" class="home-list-item-avatar">
-            <span class="home-list-item-username">${item.username}</span>
+        onlineList = data.data;
+        list.innerHTML = `<li class="home-list-item" data-value="${WorldID}">
+        <div class="home-list-item-title">
+        <img src="/images/world.jpg" alt="" class="home-list-item-title-avatar">
+            <span class="home-list-item-title-username">World</span>
+        </div>
+        <span class="home-list-item-count"></span>
+        </li>
+            ` + onlineList.map(item => `<li class="home-list-item" data-value="${item.id}">
+            <div class="home-list-item-title">
+            <img src="${item.avatar}" alt="" class="home-list-item-title-avatar">
+            <span class="home-list-item-title-username">${item.username}</span>
+            </div>
+            <span class="home-list-item-count"></span>
             </li>`).join('')
     })
 
@@ -53,6 +58,10 @@ window.onload = () => {
                     <div class="home-content-content-item-msg"><div class="home-content-content-item-msg-username">${item.user}</div><div class="home-content-content-item-msg-content">${item.data}</div></div>
                     </div>`
             contentList.scrollTop = contentList.scrollHeight;
+        } else {
+            console.log(list.children[0])
+            list.children[0].querySelector('.home-list-item-count').style.display = 'block';
+            list.children[0].querySelector('.home-list-item-count').innerHTML = parseInt(list.children[0].querySelector('.home-list-item-count').innerHTML === '' ? 0 : list.children[0].querySelector('.home-list-item-count').innerHTML) + 1;
         }
     })
 
@@ -63,6 +72,16 @@ window.onload = () => {
                 <div class="home-content-content-item-msg"><div class="home-content-content-item-msg-username">${item.user}</div><div class="home-content-content-item-msg-content">${item.data}</div></div>
                 </div>`
             contentList.scrollTop = contentList.scrollHeight;
+        } else if(item.id === localStorage.getItem('user')) {
+            return;
+        } else {
+            for (let i = 0; i < list.children.length; i++) {
+                if (list.children[i].getAttribute('data-value') === item.id) {
+                    list.children[i].querySelector('.home-list-item-count').style.display = 'block';
+                    list.children[i].querySelector('.home-list-item-count').innerHTML = parseInt(list.children[i].querySelector('.home-list-item-count').innerHTML === '' ? 0 : list.children[i].querySelector('.home-list-item-count').innerHTML) + 1;
+                    break;
+                }
+            }
         }
     })
 
@@ -93,15 +112,15 @@ window.onload = () => {
     }
 
     list.addEventListener('click', async (e) => {
+        let target = e.target.tagName === 'LI' ? e.target : e.target.parentNode;
         if (window.innerWidth < 600) {
-            location.href = `/chat?to=${e.target.getAttribute('data-value')}&username=${e.target.querySelector('.home-list-item-username').innerHTML}`;
+            location.href = `/chat?to=${target.getAttribute('data-value')}&username=${target.querySelector('.home-list-item-title-username').innerHTML}`;
             return;
         }
-
-        if (e.target.tagName !== 'LI') return;
-        to = e.target.getAttribute('data-value');
-        const username = e.target.querySelector('.home-list-item-username').innerHTML;
-        title.innerHTML = username;
+        to = target.getAttribute('data-value');
+        title.innerHTML = e.target.querySelector('.home-list-item-title-username').innerHTML;
+        target.querySelector('.home-list-item-count').style.display = 'none';
+        target.querySelector('.home-list-item-count').innerHTML = '';
 
         if (to === WorldID) {
             await axios.get('/api/chat/world').then(res => {
@@ -127,6 +146,12 @@ window.onload = () => {
     })
 
     async function init() {
+        if(window.innerWidth < 600) {
+            to = -1;
+            title.innerHTML = 'Chat';
+            return;
+        }
+        
         to = WorldID
         title.innerHTML = 'World';
 

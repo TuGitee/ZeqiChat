@@ -85,14 +85,21 @@
 .home-list .home-list-item {
     display: flex;
     align-items: center;
-    justify-content: space-evenly;
+    justify-content: space-between;
     height: 80px;
     width: 100%;
     border-bottom: 1px solid #ddd;
     cursor: pointer;
 }
 
-.home-list .home-list-item .home-list-item-avatar {
+.home-list .home-list-item .home-list-item-title {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 10px;
+}
+
+.home-list .home-list-item .home-list-item-title .home-list-item-title-avatar {
     height: 50px;
     width: 50px;
     border-radius: 10px;
@@ -101,8 +108,23 @@
     box-shadow: 1px 1px 10px -5px #ddd;
 }
 
-.home-list .home-list-item .home-list-item-username {
+.home-list .home-list-item .home-list-item-title-username {
     font-weight: 700;
+    margin-left: 10px;
+}
+
+.home-list .home-list-item .home-list-item-count {
+    height: 20px;
+    min-width: 20px;
+    border-radius: 10px;
+    background: #ff5e5e;
+    padding: 0 2px;
+    display: none;
+    color: #fff;
+    font-size: 14px;
+    line-height: 20px;
+    text-align: center;
+    margin-right: 10px;
 }
 
 .home-content {
