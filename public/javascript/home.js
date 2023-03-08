@@ -33,22 +33,52 @@ window.onload = () => {
 
     server.emit(WebSocketType.GroupList);
 
-    server.on(WebSocketType.GroupList, (data) => {
-        onlineList = data.data;
-        list.innerHTML = `<li class="home-list-item" data-value="${WorldID}">
-        <div class="home-list-item-title">
-        <img src="/images/world.jpg" alt="" class="home-list-item-title-avatar">
-            <span class="home-list-item-title-username">World</span>
-        </div>
-        <span class="home-list-item-count"></span>
-        </li>
-            ` + onlineList.map(item => `<li class="home-list-item" data-value="${item.id}">
+    const worldItem = { id: WorldID, avatar: '/images/world.jpg', username: 'World', unread: 0 }
+
+    server.on(WebSocketType.GroupList, async (data) => {
+        let now = data.data.find(item => item.now);
+        if(!now) return;
+        console.log(now);
+        let user = Number(localStorage.getItem('user'));
+        onlineList = [worldItem, ...data.data];
+        list.innerHTML = onlineList.map(item => {
+            if (item.now && Number(item.id) === user) {
+                return `<li class="home-list-item" data-value="${item.id}">
+                <div class="home-list-item-title">
+                <img src="${item.avatar}" alt="" class="home-list-item-title-avatar">
+                <span class="home-list-item-title-username">${item.username}</span>
+                </div>
+                <span class="home-list-item-count">${item.to_unread}</span>
+                </li>`;
+            } else if (!item.now && Number(now.id) === user) {
+                return `<li class="home-list-item" data-value="${item.id}">
+                <div class="home-list-item-title">
+                <img src="${item.avatar}" alt="" class="home-list-item-title-avatar">
+                <span class="home-list-item-title-username">${item.username}</span>
+                </div>
+                <span class="home-list-item-count" style="display: ${item.to_unread ? 'block' : 'none'}">${item.to_unread}</span>
+                </li>`
+            } else if (Number(item.id) === user || item.id === WorldID) {
+                return `<li class="home-list-item" data-value="${item.id}">
             <div class="home-list-item-title">
             <img src="${item.avatar}" alt="" class="home-list-item-title-avatar">
             <span class="home-list-item-title-username">${item.username}</span>
             </div>
             <span class="home-list-item-count"></span>
-            </li>`).join('')
+            </li>`}
+            else {
+                let _item = data.data.find(__item => {
+                    return Number(__item.id) === user && item.username === now.username
+                 }) || { from_unread: 0 };
+                return `<li class="home-list-item" data-value="${item.id}">
+            <div class="home-list-item-title">
+            <img src="${item.avatar}" alt="" class="home-list-item-title-avatar">
+            <span class="home-list-item-title-username">${item.username}</span>
+            </div>
+            <span class="home-list-item-count" style="display: ${_item.from_unread ? 'block' : 'none'}">${_item.from_unread}</span>
+            </li>`
+            }
+        }).join('')
     })
 
     server.on(WebSocketType.GroupChat, (item) => {
@@ -59,9 +89,9 @@ window.onload = () => {
                     </div>`
             contentList.scrollTop = contentList.scrollHeight;
         } else {
-            console.log(list.children[0])
             list.children[0].querySelector('.home-list-item-count').style.display = 'block';
-            list.children[0].querySelector('.home-list-item-count').innerHTML = parseInt(list.children[0].querySelector('.home-list-item-count').innerHTML === '' ? 0 : list.children[0].querySelector('.home-list-item-count').innerHTML) + 1;
+            console.log(parseInt(list.children[0].querySelector('.home-list-item-count').innerHTML === '' ? 0 : list.children[0].querySelector('.home-list-item-count').innerHTML))
+            list.children[0].querySelector('.home-list-item-count').innerHTML = parseInt(list.children[0].querySelector('.home-list-item-count').innerHTML === '' || list.children[0].querySelector('.home-list-item-count').innerHTML === 'undefined' || list.children[0].querySelector('.home-list-item-count').innerHTML === 'null' ? 0 : list.children[0].querySelector('.home-list-item-count').innerHTML) + 1;
         }
     })
 
@@ -72,13 +102,13 @@ window.onload = () => {
                 <div class="home-content-content-item-msg"><div class="home-content-content-item-msg-username">${item.user}</div><div class="home-content-content-item-msg-content">${item.data}</div></div>
                 </div>`
             contentList.scrollTop = contentList.scrollHeight;
-        } else if(item.id === localStorage.getItem('user')) {
+        } else if (item.id === localStorage.getItem('user')) {
             return;
         } else {
             for (let i = 0; i < list.children.length; i++) {
                 if (list.children[i].getAttribute('data-value') === item.id) {
                     list.children[i].querySelector('.home-list-item-count').style.display = 'block';
-                    list.children[i].querySelector('.home-list-item-count').innerHTML = parseInt(list.children[i].querySelector('.home-list-item-count').innerHTML === '' ? 0 : list.children[i].querySelector('.home-list-item-count').innerHTML) + 1;
+                    list.children[i].querySelector('.home-list-item-count').innerHTML = parseInt(list.children[i].querySelector('.home-list-item-count').innerHTML.trim() === '' ? 0 : list.children[i].querySelector('.home-list-item-count').innerHTML) + 1;
                     break;
                 }
             }
@@ -133,6 +163,8 @@ window.onload = () => {
         }
 
         else {
+            console.log('private read');
+            server.emit(WebSocketType.PrivateRead, createMessage(localStorage.getItem('username'), '', to));
             await axios.get(`/api/chat/private?from=${localStorage.getItem('user')}&to=${to}`).then(res => {
                 const data = res.data.msg;
                 contentList.innerHTML = data.map(item => `<div class="home-content-content-item home-content-content-item__${localStorage.getItem('username') === item.username ? 'me' : 'other'}">
@@ -146,12 +178,12 @@ window.onload = () => {
     })
 
     async function init() {
-        if(window.innerWidth < 600) {
+        if (window.innerWidth < 600) {
             to = -1;
             title.innerHTML = 'Chat';
             return;
         }
-        
+
         to = WorldID
         title.innerHTML = 'World';
 
@@ -171,11 +203,12 @@ window.onload = () => {
 }
 
 
-function createMessage(user, msg, to) {
+function createMessage(user, msg, to, id) {
     return {
         user,
         msg,
-        to
+        to,
+        id
     }
 }
 
@@ -185,5 +218,6 @@ const WebSocketType = {
     GroupList: 1,
     GroupChat: 2,
     PrivateChat: 3,
-    System: 4
+    System: 4,
+    PrivateRead: 5,
 }

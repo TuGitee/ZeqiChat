@@ -54,8 +54,8 @@ app.use(async (ctx, next) => {
 })
 
 app.listen(3000,'0.0.0.0',()=>{
-    const open = require('open');
-    open('http://localhost:3000');
+    // const open = require('open');
+    // open('http://localhost:3000');
 });
 router.redirect('/', '/login');
 
