@@ -14,7 +14,7 @@ function start(server) {
             socket.emit(WebSocketType.Error, createMessage('system', 'token error'))
         }
         socket.on(WebSocketType.GroupList, () => {
-            changeList(socket, io)
+            changeList(io)
         })
         socket.on(WebSocketType.GroupChat, (data) => {
             socket.broadcast.emit(WebSocketType.GroupChat, createMessage(data.user, data.msg, socket.user.avatar, WorldID))
@@ -33,7 +33,7 @@ function start(server) {
         })
 
         socket.on('disconnect', () => {
-            changeList(socket, io)
+            changeList(io)
         })
     })
 }
@@ -56,21 +56,37 @@ function createMessage(user, data, avatar, id) {
     }
 }
 
-function changeList(socket, io) {
-    io.sockets.emit(WebSocketType.GroupList, createMessage('system', Array.from(io.sockets.sockets).map(item => item[1].user).filter(item => item).map(item => {
-        item.now = false;
-        if(item.id === socket.user.id) {
-            item.now = true;
-            return item;
+async function changeList(io) {
+    const data = []
+    const users = Array.from(io.sockets.sockets).map(item => item[1].user).filter(item => item)
+    for (let item of users) {
+        for (let user of users) {
+            if (item.id === user.id) {
+                data.push({
+                    avatar: user.avatar,
+                    username: user.username,
+                    id: user.id,
+                    unread: 0,
+                    to: item.id,
+                    last: ''
+                })
+            }
+
+            else {
+                let res = await pool.query('select * from private where from_id=? and to_id=? and to_read=0', [user.id, item.id])
+                let msg = res[0]
+                data.push({
+                    avatar: user.avatar,
+                    username: user.username,
+                    id: String(user.id),
+                    unread: msg.length,
+                    to: item.id,
+                    last: msg.length === 0 ? '' : msg[msg.length - 1]?.message
+                })
+            }
         }
-        pool.query('select * from private where from_id=? and to_id=? and to_read=0', [Number(item.id), Number(socket.user.id)]).then(res => {
-            item.to_unread = res[0].length;
-        })
-        pool.query('select * from private where from_id=? and to_id=? and to_read=0', [Number(socket.user.id), Number(item.id)]).then(res => {
-            item.from_unread = res[0].length;
-        })
-        return item;
-    })))
+    }
+    io.sockets.emit(WebSocketType.GroupList, createMessage('system', data))
 }
 
 module.exports = start

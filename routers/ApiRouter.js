@@ -51,7 +51,7 @@ router.post('/captcha', async (ctx, next) => {
 
 router.post('/login', async (ctx, next) => {
     const { email, password } = ctx.request.body;
-    const user = await pool.query('SELECT * FROM users WHERE email=? AND password=?', [email, password]);
+    const user = await pool.query('SELECT * FROM users WHERE email=? AND password=? OR username=? AND password=?', [email, password,email,password]);
     if (user[0].length === 0) {
         ctx.body = { ok: 0, msg: '用户名或密码错误' };
         return;

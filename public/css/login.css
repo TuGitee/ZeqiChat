@@ -57,7 +57,7 @@
     justify-content: center;
 }
 .login-box-form div label {
-    width: 100px;
+    width: fit-content;
     font-weight: 500;
 }
 .login-box-form div input {

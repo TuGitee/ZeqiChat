@@ -36,49 +36,18 @@ window.onload = () => {
     const worldItem = { id: WorldID, avatar: '/images/world.jpg', username: 'World', unread: 0 }
 
     server.on(WebSocketType.GroupList, async (data) => {
-        let now = data.data.find(item => item.now);
-        if(!now) return;
-        console.log(now);
-        let user = Number(localStorage.getItem('user'));
-        onlineList = [worldItem, ...data.data];
+        let user = JSON.parse(localStorage.getItem('user'));
+        onlineList = [worldItem, ...data.data.filter(item => Number(item.to) === Number(user))];
         list.innerHTML = onlineList.map(item => {
-            if (item.now && Number(item.id) === user) {
-                return `<li class="home-list-item" data-value="${item.id}">
-                <div class="home-list-item-title">
-                <img src="${item.avatar}" alt="" class="home-list-item-title-avatar">
-                <span class="home-list-item-title-username">${item.username}</span>
-                </div>
-                <span class="home-list-item-count">${item.to_unread}</span>
-                </li>`;
-            } else if (!item.now && Number(now.id) === user) {
-                return `<li class="home-list-item" data-value="${item.id}">
-                <div class="home-list-item-title">
-                <img src="${item.avatar}" alt="" class="home-list-item-title-avatar">
-                <span class="home-list-item-title-username">${item.username}</span>
-                </div>
-                <span class="home-list-item-count" style="display: ${item.to_unread ? 'block' : 'none'}">${item.to_unread}</span>
-                </li>`
-            } else if (Number(item.id) === user || item.id === WorldID) {
-                return `<li class="home-list-item" data-value="${item.id}">
+            return `<li class="home-list-item" data-value="${item.id}">
             <div class="home-list-item-title">
             <img src="${item.avatar}" alt="" class="home-list-item-title-avatar">
             <span class="home-list-item-title-username">${item.username}</span>
             </div>
-            <span class="home-list-item-count"></span>
-            </li>`}
-            else {
-                let _item = data.data.find(__item => {
-                    return Number(__item.id) === user && item.username === now.username
-                 }) || { from_unread: 0 };
-                return `<li class="home-list-item" data-value="${item.id}">
-            <div class="home-list-item-title">
-            <img src="${item.avatar}" alt="" class="home-list-item-title-avatar">
-            <span class="home-list-item-title-username">${item.username}</span>
-            </div>
-            <span class="home-list-item-count" style="display: ${_item.from_unread ? 'block' : 'none'}">${_item.from_unread}</span>
+            <span class="home-list-item-count" style="display: ${item.unread ? 'block' : 'none'}">${item.unread}</span>
             </li>`
-            }
-        }).join('')
+        }
+        ).join('')
     })
 
     server.on(WebSocketType.GroupChat, (item) => {

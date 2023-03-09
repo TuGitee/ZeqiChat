@@ -54,8 +54,9 @@ app.use(async (ctx, next) => {
 })
 
 app.listen(3000,'0.0.0.0',()=>{
-    // const open = require('open');
-    // open('http://localhost:3000');
+    console.log('server is running at http://localhost:3000');
+    const open = require('open');
+    open('http://localhost:3000');
 });
 router.redirect('/', '/login');
 
@@ -63,5 +64,5 @@ const start = require('./routers/Socket.io');
 const server = require('http').createServer(app);
 start(server);
 server.listen(8080,'0.0.0.0',()=>{
-    console.log('server is running');
+    console.log('server is running at http://localhost:8080');
 });
