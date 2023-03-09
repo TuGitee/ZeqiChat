@@ -13,8 +13,20 @@ function start(server) {
         } else {
             socket.emit(WebSocketType.Error, createMessage('system', 'token error'))
         }
-        socket.on(WebSocketType.GroupList, () => {
+        socket.on(WebSocketType.GroupList, async () => {
             changeList(io)
+            let users = Array.from(io.sockets.sockets).map(item => item[1].user).filter(item => item)
+            let data = []
+            for (let item of users) {
+                let res = await pool.query('select * from world where read_list not like ? and from_id!=?', [`%${item.id}%`, item.id])
+                let msg = res[0]
+                data.push({
+                    id: WorldID,
+                    unread: msg.length,
+                    to: item.id,
+                })
+            }
+            io.sockets.emit(WebSocketType.WorldItem, createMessage('system', data, '', WorldID))
         })
         socket.on(WebSocketType.GroupChat, (data) => {
             socket.broadcast.emit(WebSocketType.GroupChat, createMessage(data.user, data.msg, socket.user.avatar, WorldID))
@@ -32,6 +44,10 @@ function start(server) {
             await pool.query('update private set to_read=1 where from_id=? and to_id=?', [Number(data.to), Number(socket.user.id)])
         })
 
+        socket.on(WebSocketType.WorldRead, async (data) => {
+            await pool.query('update world set read_list=concat(read_list,?) where from_id!=? and read_list not like ?', [`${data.user},`, data.user, `%${data.user}%`])
+        })
+
         socket.on('disconnect', () => {
             changeList(io)
         })
@@ -44,7 +60,9 @@ const WebSocketType = {
     GroupChat: 2,
     PrivateChat: 3,
     System: 4,
-    PrivateRead: 5
+    PrivateRead: 5,
+    WorldItem: 6,
+    WorldRead: 7
 }
 
 function createMessage(user, data, avatar, id) {

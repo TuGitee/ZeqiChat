@@ -31,9 +31,15 @@ window.onload = () => {
         location.href = '/login';
     })
 
-    server.emit(WebSocketType.GroupList);
+
 
     const worldItem = { id: WorldID, avatar: '/images/world.jpg', username: 'World', unread: 0 }
+
+    server.on(WebSocketType.WorldItem, (data) => {
+        let user = JSON.parse(localStorage.getItem('user'));
+        let d = data.data.filter(item => Number(item.to) === Number(user))
+        worldItem.unread = d[0].unread;
+    })
 
     server.on(WebSocketType.GroupList, async (data) => {
         let user = JSON.parse(localStorage.getItem('user'));
@@ -112,16 +118,23 @@ window.onload = () => {
 
     list.addEventListener('click', async (e) => {
         let target = e.target.tagName === 'LI' ? e.target : e.target.parentNode;
+        to = target.getAttribute('data-value');
+
         if (window.innerWidth < 600) {
+            if (to === WorldID)
+                server.emit(WebSocketType.WorldRead, createMessage(localStorage.getItem('user')));
+            else server.emit(WebSocketType.PrivateRead, createMessage(localStorage.getItem('user'), '', to));
+
             location.href = `/chat?to=${target.getAttribute('data-value')}&username=${target.querySelector('.home-list-item-title-username').innerHTML}`;
             return;
         }
-        to = target.getAttribute('data-value');
+
         title.innerHTML = e.target.querySelector('.home-list-item-title-username').innerHTML;
         target.querySelector('.home-list-item-count').style.display = 'none';
         target.querySelector('.home-list-item-count').innerHTML = '';
 
         if (to === WorldID) {
+            server.emit(WebSocketType.WorldRead, createMessage(localStorage.getItem('user')));
             await axios.get('/api/chat/world').then(res => {
                 const data = res.data.msg;
                 contentList.innerHTML = data.map(item => `<div class="home-content-content-item home-content-content-item__${localStorage.getItem('username') === item.username ? 'me' : 'other'}">
@@ -132,8 +145,7 @@ window.onload = () => {
         }
 
         else {
-            console.log('private read');
-            server.emit(WebSocketType.PrivateRead, createMessage(localStorage.getItem('username'), '', to));
+            server.emit(WebSocketType.PrivateRead, createMessage(localStorage.getItem('user'), '', to));
             await axios.get(`/api/chat/private?from=${localStorage.getItem('user')}&to=${to}`).then(res => {
                 const data = res.data.msg;
                 contentList.innerHTML = data.map(item => `<div class="home-content-content-item home-content-content-item__${localStorage.getItem('username') === item.username ? 'me' : 'other'}">
@@ -146,6 +158,9 @@ window.onload = () => {
 
     })
 
+    server.emit(WebSocketType.GroupList);
+    server.emit(WebSocketType.WorldItem, createMessage(localStorage.getItem('user')));
+
     async function init() {
         if (window.innerWidth < 600) {
             to = -1;
@@ -155,6 +170,8 @@ window.onload = () => {
 
         to = WorldID
         title.innerHTML = 'World';
+
+        server.emit(WebSocketType.WorldRead, createMessage(localStorage.getItem('user')));
 
         await axios.get('/api/chat/world').then(res => {
             const data = res.data.msg;
@@ -189,4 +206,6 @@ const WebSocketType = {
     PrivateChat: 3,
     System: 4,
     PrivateRead: 5,
+    WorldItem: 6,
+    WorldRead: 7,
 }

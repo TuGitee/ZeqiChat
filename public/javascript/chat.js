@@ -3,9 +3,9 @@ window.onload = () => {
     const ip = location.hostname;
     const WorldID = 'd29ybGQ=';
     const server = io(`ws://${ip}:8080?token=${localStorage.getItem('token')}`);
+    server.emit(WebSocketType.GroupList);
 
     const input = document.querySelector('#chat-input');
-    const list = document.querySelector('.home-list');
     const send = document.querySelector('#chat-send');
     const contentList = document.querySelector('#chat-content');
     const title = document.querySelector('.chat-title-name');
@@ -113,6 +113,11 @@ window.onload = () => {
         }
     }
 
+    window.onbeforeunload = () => {
+        server.emit(WebSocketType.PrivateRead, localStorage.getItem('username'),'',to);
+        server.emit(WebSocketType.WorldRead, localStorage.getItem('user'));
+    }
+
     init()
 }
 
@@ -122,5 +127,8 @@ const WebSocketType = {
     GroupList: 1,
     GroupChat: 2,
     PrivateChat: 3,
-    System: 4
+    System: 4,
+    PrivateRead: 5,
+    WorldItem: 6,
+    WorldRead: 7,
 }
