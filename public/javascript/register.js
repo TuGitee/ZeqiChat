@@ -44,7 +44,7 @@
         formdata.append('captcha', captcha);
         formdata.append('avatar', avatar);
         formdata.append('localcaptcha', localStorage.getItem('captcha'));
-        axios.post('/api/register', formdata, {
+        axios.post('/api/user', formdata, {
             headers: {
                 "Content-Type": "multipart/form-data"
             }
