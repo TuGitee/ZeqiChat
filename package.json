@@ -4,9 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
-    "build": "node index.js",
-    "server": "node index.js"
+    "start": "node index.js"
   },
   "author": "toby_tu",
   "license": "ISC",
