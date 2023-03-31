@@ -4,7 +4,7 @@ const pool = mysql2.createPool({
     user: 'root',
     password: '123',
     database: 'chatdb',
-    connectionLimit: 10,
+    connectionLimit: 50,
     waitForConnections: true
 })
 

@@ -12,8 +12,6 @@
     height: 350px;
     display: flex;
     overflow: hidden;
-    padding-top: constant(safe-area-inset-top);
-    padding-top: env(safe-area-inset-top);
 }
 
 .login * {
@@ -89,6 +87,8 @@
         padding: 20px;
         flex-direction: column;
         border-radius: 10px;
+        margin-top: constant(safe-area-inset-top);
+        margin-top: env(safe-area-inset-top);
     }
     .login-image {
         width: 100%;
@@ -102,10 +102,11 @@
         padding: 20px;
     }
     .login-box-form div label {
-        width: 50px;
+        width: fit-content;
     }
     .login-box-form div input {
         width: 100%;
+        flex: 1;
     }
     .login-box-form .form-button{
         width: 100%;

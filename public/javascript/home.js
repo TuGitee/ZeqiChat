@@ -17,6 +17,17 @@ window.onload = () => {
     let changeFlag = false;
     let messageFlag = false;
 
+    hljs.configure({
+        ignoreUnescapedHTML: true
+    });
+
+    input.addEventListener('input', () => {
+        input.parentNode.style.height = 'auto';
+        if (input.parentNode.offsetHeight < 80) input.parentNode.style.height = '80px';
+        input.parentNode.style.height = input.scrollHeight + 'px';
+        contentList.scrollTop = contentList.scrollHeight;
+    })
+
     const logout = document.querySelector('#logout');
     logout.onclick = () => {
         localStorage.removeItem('token');
@@ -204,7 +215,7 @@ window.onload = () => {
         pageDelta++;
     }
 
-    document.onkeydown = (e) => {
+    input.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.key === 'Enter') {
             e.preventDefault();
             let start = input.selectionStart;
@@ -213,12 +224,21 @@ window.onload = () => {
             input.value = text.substring(0, start) + '\n' + text.substring(end);
             input.selectionStart = input.selectionEnd = start + 1;
             input.scrollTop = input.scrollHeight;
+            input.dispatchEvent(new Event('input'));
         }
         else if (e.key === 'Enter') {
             e.preventDefault()
             send.click();
+        } else if(e.key==='Tab'){
+            e.preventDefault();
+            let start = input.selectionStart;
+            let end = input.selectionEnd;
+            let text = input.value;
+            input.value = text.substring(0, start) + '    ' + text.substring(end);
+            input.selectionStart = input.selectionEnd = start + 4;
+            input.scrollTop = input.scrollHeight;
         }
-    }
+    })
 
     const homeContent = document.querySelector('.home-content')
 
@@ -320,6 +340,7 @@ window.onload = () => {
         let stemp = to;
         let target = e.target.tagName === 'LI' ? e.target : e.target.parentNode.tagName === 'LI' ? e.target.parentNode : e.target.parentNode.parentNode;
         to = target.getAttribute('data-value');
+        if (to === null) return;
         if (stemp === to && to === localStorage.getItem('user')) {
             changeAvatar();
             return;
@@ -329,14 +350,17 @@ window.onload = () => {
         pageDelta = 0;
         pageNo = 0;
         messageFlag = false;
+
         if (window.innerWidth < 600) {
             homeContent.classList.add('home-content__show');
         }
+
         title.innerHTML = target.querySelector('.home-list-item-title-username').innerHTML;
         if (target.querySelector('.home-list-item-count').innerHTML !== 'self') {
             target.querySelector('.home-list-item-count').style.display = 'none';
             target.querySelector('.home-list-item-count').innerHTML = '';
         }
+
         time = +new Date();
         changeFlag = true;
         contentList.innerHTML = '';
@@ -371,9 +395,9 @@ window.onload = () => {
                 <div class="home-content-content-item-msg"><div class="home-content-content-item-msg-username inner-data">${removeSlash(item.username)}</div><div class="home-content-content-item-msg-content"><div class="inner-data">${removeSlash(item.message)}</div></div></div>
                 </div>`}).join('');
             contentList.innerHTML = changeFlag ? msg : msg + contentList.innerHTML;
-            formatEveryMessage()
             timeList = [...com, ...timeList];
             changeFlag = false;
+            formatEveryMessage()
         })
     }
 
@@ -397,29 +421,32 @@ window.onload = () => {
                     <div class="home-content-content-item-msg"><div class="home-content-content-item-msg-username inner-data">${removeSlash(item.username)}</div><div class="home-content-content-item-msg-content"><div class="inner-data">${removeSlash(item.message)}</div></div></div>
                     </div>`}).join('');
             contentList.innerHTML = changeFlag ? msg : msg + contentList.innerHTML;
-            formatEveryMessage()
             timeList = [...com, ...timeList];
             changeFlag = false;
+            formatEveryMessage()
         })
     }
 
-
     async function init() {
+
+        server.emit(WebSocketType.GroupList);
+        server.emit(WebSocketType.WorldItem, createMessage(localStorage.getItem('user')));
+
         document.querySelector('.border-hello').textContent = `你好, ${localStorage.getItem('username')}`;
         if (window.innerWidth < 600) {
             to = -1;
             title.innerHTML = 'Chat';
             return;
         }
+
         to = WorldID
         title.innerHTML = 'World';
-        server.emit(WebSocketType.WorldRead);
-
-        timeList = [];
         await getWorldData();
+        server.emit(WebSocketType.WorldRead);
+        initFlag = false;
 
-        formatEveryMessage();
         contentList.scrollTop = contentList.scrollHeight;
+        toBottom()
     }
 
     let scrollFlag = false;
@@ -442,11 +469,11 @@ window.onload = () => {
                 div.style.maxHeight = '0'
                 div.style.opacity = '0'
                 setTimeout(() => {
-                    div ?? contentList.removeChild(div)
+                    if (div) div.remove()
                     scrollFlag = false;
                 }, 500)
             }, 2000)
-        } else if (e.target.scrollTop === 0) {
+        } else if (e.target.scrollTop === 0 && !changeFlag) {
             const bottom = contentList.scrollHeight - contentList.scrollTop;
             if (to === WorldID) {
                 await getWorldData();
@@ -455,13 +482,11 @@ window.onload = () => {
             }
             contentList.scrollTop = contentList.scrollHeight - bottom;
         }
+
+
     })
 
-
     init()
-
-    server.emit(WebSocketType.GroupList);
-    server.emit(WebSocketType.WorldItem, createMessage(localStorage.getItem('user')));
 
     let flag = false;
     contentList.addEventListener('click', async (e) => {
@@ -500,6 +525,129 @@ window.onload = () => {
             }, 700);
         })
     })
+
+    document.addEventListener('dragover', (e) => {
+        document.querySelector('.home-content-image').classList.add('active');
+        e.preventDefault();
+    })
+
+    document.addEventListener('dragleave', (e) => {
+        document.querySelector('.home-content-image').classList.remove('active');
+        e.preventDefault();
+    })
+
+    function uploadImage(file) {
+        if (!file) return;
+        if (!/image\/\w+/.test(file.type)) {
+            alert("请确保文件为图像类型!");
+            document.querySelector('.home-content-image').classList.remove('active');
+            document.querySelector('#chat-image').value = '';
+            return;
+        }
+        if (file.size > 200 * 1024) {
+            alert("图片大小不得超过200KB! 请压缩图片! ");
+            document.querySelector('.home-content-image').classList.remove('active');
+            document.querySelector('#chat-image').value = '';
+            return;
+        }
+        const fileReader = new FileReader();
+        fileReader.readAsDataURL(file);
+        fileReader.onload = (e) => {
+            const div = document.createElement('div');
+            div.className = 'upload-image'
+            div.innerHTML = `
+        <div class="upload-image-content">
+            <div class="upload-image-content-title">发送图片</div>
+            <div class="upload-image-content-msg">你确定要发送文件吗？（图片大小不得超过200KB）</div>
+            <div class="upload-image-content-image"><img src="${e.target.result}"></div>
+            <div class="upload-image-content-btns">
+                <button class="upload-image-content-btns-cancel">取消</button>
+                <button class="upload-image-content-btns-confirm">确定</button>
+            </div>
+        </div>
+        `
+            document.body.appendChild(div);
+            const cancel = div.querySelector('.upload-image-content-btns-cancel');
+            const confirm = div.querySelector('.upload-image-content-btns-confirm');
+            cancel.addEventListener('click', () => {
+                div.remove();
+            })
+            confirm.addEventListener('click', () => {
+                div.remove();
+                const formData = new FormData();
+                formData.append('image', file);
+                axios.post('/api/image', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }).then(res => {
+                    if (to === WorldID) {
+                        server.emit(WebSocketType.GroupChat, createMessage(null, `<img src="${res.data.image}"/>`));
+                    }
+                    else {
+                        server.emit(WebSocketType.PrivateChat, createMessage(null, `<img src="${res.data.image}"/>`, to));
+                    }
+                    if (Math.abs(new Date() - time) > 1000 * 60 * 5) {
+                        const time = document.createElement('div');
+                        time.className = 'home-content-content-item__time';
+                        time.innerHTML = formatTime()
+                        contentList.appendChild(time);
+                    }
+                    const div = document.createElement('div');
+                    div.className = 'home-content-content-item home-content-content-item__me';
+                    div.innerHTML = `
+                            <img src="${localStorage.getItem('avatar')}" alt="" class="home-content-content-item-avatar">
+                            <div class="home-content-content-item-msg"><div class="home-content-content-item-msg-username inner-data">${removeSlash(localStorage.getItem('username'))}</div><div class="home-content-content-item-msg-content"><div class="inner-data">${removeSlash(`<img src="${res.data.image}">`)}</div></div></div>
+                            `
+                    contentList.appendChild(div);
+                    time = +new Date();
+                    timeList.push(time);
+                    const inners = div.querySelectorAll('.inner-data')
+                    for (let i = 0; i < inners.length; i++) {
+                        formatMessage(inners[i]);
+                    }
+                    contentList.scrollTop = contentList.scrollHeight;
+                    pageDelta++;
+                })
+            })
+        }
+        document.querySelector('.home-content-image').classList.remove('active');
+    }
+
+    async function toBottom() {
+        await new Promise((resolve) => {
+            let imgList = document.querySelectorAll('img');
+            let videoList = document.querySelectorAll('video');
+            let count = 0;
+            let total = imgList.length + videoList.length;
+            if (total === 0) {
+                resolve();
+                return;
+            }
+            for (let i = 0; i < imgList.length; i++) {
+                imgList[i].onload = () => {
+                    count++;
+                    if (count === total) {
+                        resolve();
+                    }
+                }
+            }
+            for (let i = 0; i < videoList.length; i++) {
+                videoList[i].onloadeddata = () => {
+                    count++;
+                    if (count === total) {
+                        resolve();
+                    }
+                }
+            }
+        })
+        contentList.scrollTop = contentList.scrollHeight;
+    }
+
+    document.querySelector('#chat-image').addEventListener('change', () => {
+        const file = document.querySelector('#chat-image').files[0];
+        uploadImage(file);
+    })
 }
 
 function formatTime(time) {
@@ -537,92 +685,6 @@ function createMessage(user, msg, to, id) {
         id
     }
 }
-
-
-function formatEveryMessage() {
-    const innerData = document.querySelectorAll('.inner-data');
-    for (let i = 0; i < innerData.length; i++) {
-        formatMessage(innerData[i]);
-    }
-}
-
-const newLine = ';newline;'
-const leftArrow = ';leftarrow;'
-const rightArrow = ';rightarrow;'
-
-const ExgType = {
-    img: new RegExp(`${leftArrow}img src="(http(s)?:\/\/.+)" ?\/?${rightArrow}`, 'g'),
-    a: new RegExp(`${leftArrow}a href="(http(s)?:\/\/.+)"${rightArrow}(.*)${leftArrow}\/?a${rightArrow}`, 'g'),
-    video: new RegExp(`${leftArrow}video src="(http(s)?:\/\/.+)"${rightArrow}${leftArrow}\/?video${rightArrow}`, 'g'),
-    audio: new RegExp(`${leftArrow}audio src="(http(s)?:\/\/.+)"${rightArrow}${leftArrow}\/?audio${rightArrow}`, 'g'),
-    i: new RegExp(`${leftArrow}i${rightArrow}(.*?)${leftArrow}\/?i${rightArrow}`, 'g'),
-    em: new RegExp(`${leftArrow}em${rightArrow}(.*?)${leftArrow}\/?em${rightArrow}`, 'g'),
-    b: new RegExp(`${leftArrow}b${rightArrow}(.*?)${leftArrow}\/?b${rightArrow}`, 'g'),
-    strong: new RegExp(`${leftArrow}strong${rightArrow}(.*?)${leftArrow}\/?strong${rightArrow}`, 'g'),
-    u: new RegExp(`${leftArrow}u${rightArrow}(.*?)${leftArrow}\/?u${rightArrow}`, 'g'),
-    s: new RegExp(`${leftArrow}s${rightArrow}(.*?)${leftArrow}\/?s${rightArrow}`, 'g'),
-    del: new RegExp(`${leftArrow}del${rightArrow}(.*?)${leftArrow}\/?del${rightArrow}`, 'g'),
-    color: new RegExp(`${leftArrow}color(:|=)"?(.*?)"?${rightArrow}(.*?)${leftArrow}\/?color${rightArrow}`, 'g'),
-    size: new RegExp(`${leftArrow}size(:|=)"?(.*?)"?${rightArrow}(.*?)${leftArrow}\/?size${rightArrow}`, 'g'),
-    h1: new RegExp(`${leftArrow}h1${rightArrow}(.*?)${leftArrow}\/?h1${rightArrow}`, 'g'),
-    h2: new RegExp(`${leftArrow}h2${rightArrow}(.*?)${leftArrow}\/?h2${rightArrow}`, 'g'),
-    h3: new RegExp(`${leftArrow}h3${rightArrow}(.*?)${leftArrow}\/?h3${rightArrow}`, 'g'),
-    h4: new RegExp(`${leftArrow}h4${rightArrow}(.*?)${leftArrow}\/?h4${rightArrow}`, 'g'),
-    h5: new RegExp(`${leftArrow}h5${rightArrow}(.*?)${leftArrow}\/?h5${rightArrow}`, 'g'),
-    h6: new RegExp(`${leftArrow}h6${rightArrow}(.*?)${leftArrow}\/?h6${rightArrow}`, 'g'),
-    p: new RegExp(`${leftArrow}p${rightArrow}(.*?)${leftArrow}\/?p${rightArrow}`, 'g'),
-    code: new RegExp(`${leftArrow}code${rightArrow}(.*?)${leftArrow}\/?code${rightArrow}`, 'g'),
-    pre: new RegExp(`${leftArrow}pre${rightArrow}(.*?)${leftArrow}\/?pre${rightArrow}`, 'g'),
-    blockquote: new RegExp(`${leftArrow}blockquote${rightArrow}(.*?)${leftArrow}\/?blockquote${rightArrow}`, 'g'),
-    li: new RegExp(`${leftArrow}li${rightArrow}(.*?)${leftArrow}\/?li${rightArrow}`, 'g'),
-    hr: new RegExp(`${leftArrow}hr ?\/?${rightArrow}`, 'g'),
-}
-
-function formatMessage(node) {
-    if (!node?.getAttribute('data-format')) {
-        for (const reg in ExgType) {
-            if (ExgType[reg].test(node.innerHTML)) {
-                node.innerHTML = node.innerHTML.trim().replace(ExgType[reg], (match, p1, p2, p3) => {
-                    switch (reg) {
-                        case 'img':
-                            if (!p1) return `${leftArrow}${reg}${rightArrow}${leftArrow}/${reg}${rightArrow}`
-                            return `<img src="${p1}" />`;
-                        case 'a':
-                            if (!p1) return `${leftArrow}${reg}${rightArrow}${leftArrow}/${reg}${rightArrow}`
-                            if (!p3) return `<a href="${p1}">匿名链接，请谨慎点击</a>`
-                            return `<a href="${p1}">${p3}</a>`;
-                        case 'video': case 'audio':
-                            if (!p1) return `${leftArrow}${reg}${rightArrow}${leftArrow}/${reg}${rightArrow}`
-                            return `<${reg} controls src="${p1}"></${reg}>`;
-                        case 'hr':
-                            return `<hr />`;
-                        case 'i': case 'b': case 'u': case 's': case 'del': case 'h1': case 'h2': case 'h3': case 'h4': case 'h5': case 'h6': case 'p': case 'code': case 'pre': case 'blockquote': case 'em': case 'strong': case 'li':
-                            if (!p1) return `${leftArrow}${reg}${rightArrow}${leftArrow}/${reg}${rightArrow}`
-                            return `<${reg}>${p1}</${reg}>`
-                        case 'color':
-                            if (!p2) return `${leftArrow}${reg}${rightArrow}${leftArrow}/${reg}${rightArrow}`
-                            if (!p3) return `<span style="color:${p2}">文字</span>`
-                            return `<span style="color:${p2}">${p3}</span>`;
-                        case 'size':
-                            if (!p2) return `${leftArrow}${reg}${rightArrow}${leftArrow}/${reg}${rightArrow}`
-                            if (!p3) return `<span style="font-size:${p2 > 100 ? 100 : p2}px">文字</span>`
-                            return `<span style="font-size:${p2 > 100 ? 100 : p2}px">${p3}</span>`;
-                    }
-                });
-            }
-        }
-        node.textContent = node.innerHTML.replace(new RegExp(newLine, "g"), '<br/>').replace(new RegExp(leftArrow, "g"), '&lt;').replace(new RegExp(rightArrow, "g"), '&gt;')
-        node.innerHTML = node.textContent;
-
-        node.setAttribute('data-format', true);
-    }
-}
-
-
-function removeSlash(string) {
-    return string.replace(/\n/g, newLine).replace(/</g, leftArrow).replace(/>/g, rightArrow).replace(/<|>/g, '');
-}
-
 
 const WebSocketType = {
     Error: 0,

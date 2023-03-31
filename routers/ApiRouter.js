@@ -1,7 +1,7 @@
 const Router = require('koa-router');
 const router = new Router();
 const multer = require('@koa/multer');
-const upload = multer({ dest: 'public/uploads/' });
+const upload = multer({ dest: 'public/uploads' });
 const CAPTCHA = require('../utils/CAPTCHA');
 const JWT = require('../utils/JWT');
 const pool = require('../config/pool');
@@ -33,9 +33,12 @@ router.post('/user', upload.single('avatar'), async (ctx, next) => {
 
     if (ctx.file) {
         let imgType = ctx.file.mimetype;
-        if (imgType == "image/png" || imgType == "image/jpeg" || imgType == "image/gif" || imgType == "image/bmp" || imgType == "image/jpg" || imgType == "image/webp") {
-            await webp.cwebp(`public/uploads/${ctx.file.filename}`, `public/uploads/${ctx.file.filename}.webp`, "-q 90")
-            fs.unlink(`public/uploads/${ctx.file.filename}`, () => { console.log('delete') })
+        if (imgType == "image/png" || imgType == "image/jpeg" || imgType == "image/bmp" || imgType == "image/jpg" || imgType == "image/webp") {
+            await webp.cwebp(`public/uploads/${ctx.file.filename}`, `public/uploads/${ctx.file.filename}.webp`, "-q 0")
+            fs.unlink(`public/uploads/${ctx.file.filename}`, () => { console.log('new avatar delete') })
+        } else if (imgType == "image/gif") {
+            await webp.gwebp(`public/uploads/${ctx.file.filename}`, `public/uploads/${ctx.file.filename}.webp`, "-q 100")
+            fs.unlink(`public/uploads/${ctx.file.filename}`, () => { console.log('new avatar delete') })
         }
     }
     const avatar = ctx.file ? `/uploads/${ctx.file.filename}.webp` : `/images/default_avatar.png`
@@ -54,11 +57,11 @@ router.put('/user', upload.single('avatar'), async (ctx, next) => {
         if (imgType == "image/png" || imgType == "image/jpeg" || imgType == "image/bmp" || imgType == "image/jpg" || imgType == "image/webp") {
             await webp.cwebp(`public/uploads/${ctx.file.filename}`, `public/uploads/${ctx.file.filename}.webp`, "-q 0")
             fs.unlink(`public/uploads/${ctx.file.filename}`, () => { console.log('new avatar delete') })
-            if(user.avatar !== '/images/default_avatar.png') fs.unlink(`public/uploads/${user.avatar}`, () => { console.log('old avatar delete') })
+            if (user.avatar !== '/images/default_avatar.png') fs.unlink(`public/uploads/${user.avatar}`, () => { console.log('old avatar delete') })
         } else if (imgType == "image/gif") {
             await webp.gwebp(`public/uploads/${ctx.file.filename}`, `public/uploads/${ctx.file.filename}.webp`, "-q 100")
             fs.unlink(`public/uploads/${ctx.file.filename}`, () => { console.log('new avatar delete') })
-            if(user.avatar !== '/images/default_avatar.png') fs.unlink(`public/uploads/${user.avatar}`, () => { console.log('old avatar delete') })
+            if (user.avatar !== '/images/default_avatar.png') fs.unlink(`public/uploads/${user.avatar}`, () => { console.log('old avatar delete') })
         }
     }
     const avatar = ctx.file ? `/uploads/${ctx.file.filename}.webp` : user.avatar
@@ -110,6 +113,21 @@ router.post('/login', async (ctx, next) => {
     ctx.body = { ok: 1, token, username: user[0][0].username, user: user[0][0].id, avatar: user[0][0].avatar };
 })
 
+router.post('/image', upload.single('image'), async (ctx, next) => {
+    if (ctx.file) {
+        let imgType = ctx.file.mimetype;
+        if (imgType == "image/png" || imgType == "image/jpeg" || imgType == "image/bmp" || imgType == "image/jpg" || imgType == "image/webp") {
+            await webp.cwebp(`public/uploads/${ctx.file.filename}`, `public/uploads/${ctx.file.filename}.webp`, "-q 30")
+            fs.unlink(`public/uploads/${ctx.file.filename}`, () => { console.log('new avatar delete') })
+        } else if (imgType == "image/gif") {
+            await webp.gwebp(`public/uploads/${ctx.file.filename}`, `public/uploads/${ctx.file.filename}.webp`, "-q 20")
+            fs.unlink(`public/uploads/${ctx.file.filename}`, () => { console.log('new avatar delete') })
+        }
+    }
+    const image = ctx.file ? `/uploads/${ctx.file.filename}.webp` : `/images/default_avatar.png`
+    ctx.body = { ok: 1, image };
+})
+
 const pageSize = 20;
 router.get('/chat/world', async (ctx, next) => {
     const pageNo = Number(ctx.query.pageNo) || 0;
@@ -134,7 +152,5 @@ router.get('/chat/private', async (ctx, next) => {
     }
     ctx.body = { ok: 1, msg: info[0].reverse() };
 })
-
-
 
 module.exports = router;

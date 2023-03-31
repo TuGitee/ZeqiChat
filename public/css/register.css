@@ -12,8 +12,6 @@
     height: 500px;
     display: flex;
     overflow: hidden;
-    padding-top: constant(safe-area-inset-top);
-    padding-top: env(safe-area-inset-top);
 }
 
 .register * {
@@ -101,6 +99,8 @@
         flex-direction: column;
         margin-top: 10px;
         border: none;
+        margin-top: constant(safe-area-inset-top);
+        margin-top: env(safe-area-inset-top);
     }
     .register-image {
         width: 100%;
