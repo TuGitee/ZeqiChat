@@ -229,6 +229,7 @@ window.onload = () => {
         else if (e.key === 'Enter') {
             e.preventDefault()
             send.click();
+            input.dispatchEvent(new Event('input'));
         } else if(e.key==='Tab'){
             e.preventDefault();
             let start = input.selectionStart;
