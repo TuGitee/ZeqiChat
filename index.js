@@ -6,17 +6,44 @@ const bodyparser = require('koa-bodyparser');
 const views = require('koa-views');
 const session = require('koa-session-minimal')
 const JWT = require('./utils/JWT');
+const cors = require('koa2-cors');
+// const fs = require('fs')
+const http = require('http')
+
+// const https = require('https')
+// const sslify = require('koa-sslify').default
+
+// const options = {
+//  key: fs.readFileSync('/www/server/panel/vhost/cert/择栖聊天室/fullchain.pem'),
+//  cert: fs.readFileSync('/www/server/panel/vhost/cert/择栖聊天室/privkey.pem'),
+// }
+
+// app.use(sslify())
+
+app.use(cors({
+    credentials: true,
+    origin: ctx => ctx.header.origin
+}))
+
 
 app.use(bodyparser());
 app.use(m_static(path.join(__dirname, 'public')));
-app.use(views(path.join(__dirname, 'public/html'), { map: { html: 'ejs' } }));
+// app.use(views(path.join(__dirname, 'public/html'), { map: { html: 'ejs' } }));
 
 app.use(session({
     key: 'captcha',
     cookie: {
-        maxAge: 1000 * 60 * 5
+        maxAge: 1000 * 60 * 5,
     }
 }))
+
+// app.use(async (ctx, next)=> {
+//   ctx.set('Access-Control-Allow-Origin', '');
+//   ctx.set('Access-Control-Allow-Headers', 'Content-Type');
+//   ctx.set("Access-Control-Allow-Credentials", "true");
+//   ctx.set('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE');
+//   await next();
+// });
 
 app.use(async (ctx, next) => {
     if (ctx.url.includes("login")) {
@@ -53,12 +80,13 @@ app.use(async (ctx, next) => {
     await next();
 })
 
-app.listen(3000,'0.0.0.0',()=>{
-    console.log('server is running at http://localhost:3000');
-});
-router.redirect('/', '/login');
+
+app.listen(3000, '0.0.0.0', () => { })
+// https.createServer(options, app.callback()).listen(3000,'0.0.0.0');
+// https.createServer(app.callback()).listen(3000,'0.0.0.0');
 
 const start = require('./routers/Socket.io');
-const server = require('http').createServer(app);
+const server = http.createServer(app);
 start(server);
-server.listen(8080,'0.0.0.0');
+server.listen(8080, '0.0.0.0', () => {
+});

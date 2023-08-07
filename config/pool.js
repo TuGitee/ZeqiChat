@@ -4,7 +4,7 @@ const pool = mysql2.createPool({
     user: 'root',
     password: '123',
     database: 'chatdb',
-    connectionLimit: 50,
+    connectionLimit: 10,
     waitForConnections: true
 })
 
@@ -13,5 +13,7 @@ pool.query('CREATE TABLE IF NOT EXISTS users (id INT NOT NULL AUTO_INCREMENT,ema
 pool.query('CREATE TABLE IF NOT EXISTS world (world_msg_id INT NOT NULL AUTO_INCREMENT,message VARCHAR(1023) NOT NULL,from_id INT NOT NULL,create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,read_list VARCHAR(255) NOT NULL DEFAULT "",PRIMARY KEY (world_msg_id))')
 
 pool.query('CREATE TABLE IF NOT EXISTS private (private_msg_id INT NOT NULL AUTO_INCREMENT,message VARCHAR(1023) NOT NULL,from_id INT NOT NULL,to_id INT NOT NULL,create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,to_read BOOLEAN NOT NULL DEFAULT FALSE,PRIMARY KEY (private_msg_id))')
+
+pool.query('CREATE TABLE IF NOT EXISTS friend (request_id INT NOT NULL AUTO_INCREMENT,from_id INT NOT NULL,to_id INT NOT NULL,create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,accept BOOLEAN NOT NULL DEFAULT FALSE,PRIMARY KEY (request_id))')
 
 module.exports = pool;
