@@ -7,7 +7,7 @@
                     <div class="change-avatar-content-body-item-title">头像</div>
                     <div class="change-avatar-content-body-item-content">
                         <div class="change-avatar-content-body-item-content-avatar">
-                            <img :src="`http://47.120.2.219:3000${avatar}`" v-if="!file" alt="404 Not Found..."
+                            <img :src="`https://zeqichat.xyz${avatar}`" v-if="!file" alt="404 Not Found..."
                                 class="change-avatar-content-body-item-content-avatar-img">
                             <img v-else :src="url" alt="404 Not Found..."
                                 class="change-avatar-content-body-item-content-avatar-img" @click="ResetPhoto" />
@@ -22,7 +22,7 @@
                 <div class="change-avatar-content-body-item">
                     <div class="change-avatar-content-body-item-title">用户名</div>
                     <div class="change-avatar-content-body-item-content">
-                        <input type="text" class="change-avatar-content-body-item-content-input" v-model="username">
+                        <input type="text" class="change-avatar-content-body-item-content-input" v-model="username" :placeholder="preName">
                     </div>
                 </div>
             </div>
@@ -63,6 +63,9 @@ export default {
         },
         url() {
             return URL.createObjectURL(this.file)
+        },
+        preName() {
+            return localStorage.getItem("username")
         }
     },
     methods: {
@@ -77,6 +80,14 @@ export default {
             this.$emit("cancel")
         },
         async confirm() {
+            if (!this.username) {
+                this.$notify.error({
+                    title: '出错',
+                    message: "用户名不能为空",
+                });
+                return;
+            }
+
             this.loading = true
             const formdata = new FormData();
             formdata.append("token", localStorage.getItem("token"));
@@ -91,9 +102,12 @@ export default {
                 localStorage.setItem("username", res.data.username);
                 localStorage.setItem("avatar", res.data.avatar);
                 localStorage.setItem("token", res.data.newToken);
-                this.$router.go(0)
+                location.reload()
             } else {
-                alert(res.data.msg);
+                this.$notify.error({
+                    title: '出错',
+                    message: res.data.msg,
+                });
             }
             this.loading = false
             this.$emit("cancel")
@@ -417,6 +431,8 @@ export default {
 
 .change-avatar .change-avatar-content .change-avatar-content-body .change-avatar-content-body-item .change-avatar-content-body-item-content {
     display: flex;
+    width: 100%;
+    justify-content: center;
 }
 
 .change-avatar .change-avatar-content .change-avatar-content-body .change-avatar-content-body-item .change-avatar-content-body-item-content .change-avatar-content-body-item-content-avatar {
@@ -476,7 +492,7 @@ export default {
 }
 
 .change-avatar .change-avatar-content .change-avatar-content-body .change-avatar-content-body-item .change-avatar-content-body-item-content .change-avatar-content-body-item-content-input {
-    width: 100%;
+    width: 80%;
     height: 50px;
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -530,7 +546,7 @@ export default {
 
 @media screen and (max-width: 480px) {
     .change-avatar {
-        width: 80%;
+        width: 90%;
     }
 }
 </style>

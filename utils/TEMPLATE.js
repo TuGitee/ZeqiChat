@@ -1,5 +1,5 @@
 const getTime = require('./TIME');
-module.exports = (method,to,captcha) => `<div>
+module.exports = (method, to, captcha) => `<div>
 <includetail>
     <style>
         body, table, td, a {
@@ -76,7 +76,7 @@ module.exports = (method,to,captcha) => `<div>
         </tr>
         <tr class="header">
             <td style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; font-size: 13px; line-height: 1.6; color: #5c5c5c; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; padding: 25px 0;">
-                <img src="http://47.120.2.219:3000/zeqi.ico" width="50" height="50"
+                <img src="https://zeqichat.xyz/favicon.ico" width="50" height="50"
                      style="-ms-interpolation-mode: bicubic;">
             </td>
         </tr>

@@ -1,7 +1,12 @@
 import axios from "axios";
 
 axios.interceptors.request.use((config) => {
-    return config;
+    const token = localStorage.getItem("token");
+    if (token) {
+        config.headers.authorization = token
+        return config
+    }
+    return config
 });
 axios.interceptors.response.use((response) => {
     const { authorization } = response.headers;
@@ -12,6 +17,6 @@ axios.interceptors.response.use((response) => {
 });
 
 export default axios.create({
-    baseURL: "http://47.120.2.219:3000/",
+    baseURL: "https://zeqichat.xyz/",
     withCredentials: true
 })

@@ -2,12 +2,15 @@
     <li class="user">
         <div class="user-title">
             <div class="user-title-avatar">
-                <img :src="`http://47.120.2.219:3000${user.avatar}`" alt="404 Not Found..." class="user-title-avatar-img">
+                <img :src="`https://zeqichat.xyz${user.avatar}`" alt="404 Not Found..." class="user-title-avatar-img">
             </div>
 
             <div class="user-title-content">
                 <p class="user-title-content-header">
-                    <span class="user-title-username" v-html="formatMessage(removeSlash(user.username))"></span>
+                    <span class="user-title-content-name">
+                        <span class="user-title-username" v-html="filterMessage(formatMessage(user.username))"></span>
+                        <time>{{ formatTime(user.create_time) }}</time>
+                    </span>
                     <span class="user-title-btns">
                         <button v-if="user.accept === 0 && user.from_id == userId"
                             class="user-title-content-btn pending">等待同意...</button>
@@ -16,11 +19,12 @@
                         <button v-if="user.accept === 0 && user.from_id != userId" class="user-title-content-btn reject"
                             @click="rejectUser">拒绝</button>
                         <button v-if="user.accept === 1" class="user-title-content-btn resolved"><i
-                                class="el-icon-check"></i> 已同意</button>
+                                class="el-icon-check"></i>
+                            已同意</button>
                         <button v-if="user.accept === -1" class="user-title-content-btn rejected"><i
-                                class="el-icon-close"></i> 已拒绝</button>
+                                class="el-icon-close"></i>
+                            已拒绝</button>
                     </span>
-
                 </p>
             </div>
         </div>
@@ -28,7 +32,7 @@
 </template>
 
 <script>
-import { removeSlash, formatMessage } from "@/utils/message";
+import { filterMessage, formatMessage } from "@/utils/message";
 import formatTime from '@/utils/formatTime.js'
 export default {
     name: 'UserItem',
@@ -46,7 +50,7 @@ export default {
         }
     },
     methods: {
-        removeSlash,
+        filterMessage,
         formatMessage,
         formatTime,
         resolveUser() {
@@ -61,9 +65,6 @@ export default {
             this.$emit('rejectUser', this.user.request_id)
         }
     },
-    mounted() {
-        console.log(this.user);
-    }
 }
 </script>
 
@@ -117,6 +118,32 @@ export default {
                 justify-content: space-between;
                 align-items: center;
 
+                .user-title-content-name {
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 5px;
+
+                    .user-title-username {
+                        font-weight: 700;
+                        overflow: hidden;
+                        white-space: nowrap;
+                        text-overflow: ellipsis;
+                        text-align: left;
+                    }
+
+                    time {
+                        font-size: 12px;
+                        text-align: left;
+                        white-space: nowrap;
+                        color: #777;
+                        display: inline-block;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                }
+
                 .user-title-btns {
                     display: flex;
                     gap: 5px;
@@ -129,6 +156,11 @@ export default {
                         font-size: 12px;
                         font-weight: 700;
                         white-space: nowrap;
+                        line-height: 1.5;
+
+                        &.pending {
+                            color: #333;
+                        }
 
                         &.resolve {
                             color: #333;
@@ -140,49 +172,19 @@ export default {
                         }
 
                         &.resolved {
-                            background: #fff0;
-                            color: #33ae64;
+                            background: #33ae64;
+                            color: white;
                             cursor: default;
                         }
 
                         &.rejected {
-                            background: #fff0;
-                            color: #d61414;
+                            background: #d61414;
+                            color: white;
                             cursor: default;
                         }
                     }
                 }
 
-                .user-title-content-btn {
-                    padding: 5px 10px;
-                    border-radius: 5px;
-                    border: none;
-                    cursor: pointer;
-                    font-size: 12px;
-                    font-weight: 700;
-                    white-space: nowrap;
-
-                    &.resolve {
-                        color: #333;
-                    }
-
-                    &.reject {
-                        background-color: #d61414;
-                        color: white;
-                    }
-
-                    &.resolved {
-                        background: #fff0;
-                        color: #33ae64;
-                        cursor: default;
-                    }
-
-                    &.rejected {
-                        background: #fff0;
-                        color: #d61414;
-                        cursor: default;
-                    }
-                }
             }
         }
 
@@ -202,12 +204,6 @@ export default {
             }
         }
 
-        .user-title-username {
-            font-weight: 700;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
     }
 
 }

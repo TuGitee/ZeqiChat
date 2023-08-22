@@ -7,6 +7,9 @@ const WebSocketType = {
     PrivateRead: 5,
     WorldItem: 6,
     WorldRead: 7,
+    FriendRequest: 8,
+    FriendAccept: 9,
+    FriendReject: 10
 };
 
 export { WebSocketType };

@@ -7,7 +7,8 @@ const pool = require('../config/pool');
 router.get('/', async (ctx, next) => {
     const user = ctx.query.user;
     const user_id = JWT.verify(user).id;
-    const res = await pool.query('SELECT * FROM users WHERE id IN (SELECT to_id AS friend_id FROM friend WHERE from_id =? AND accept=1 UNION SELECT from_id AS friend_id FROM friend WHERE to_id =? AND accept=1)', [user_id, user_id]);
+    if (!user_id) ctx.body = { ok: 0, msg: '用户未登录' };
+    const res = await pool.query('SELECT id,username,avatar,online FROM users WHERE id IN (SELECT to_id AS friend_id FROM friend WHERE from_id =? AND accept=1 UNION SELECT from_id AS friend_id FROM friend WHERE to_id =? AND accept=1)', [user_id, user_id]);
     const userList = res[0]
 
     const data = []
@@ -57,6 +58,7 @@ router.get('/', async (ctx, next) => {
 router.post('/', async (ctx, next) => {
     const { from, to } = ctx.request.body;
     const from_id = JWT.verify(from).id;
+    if (!from_id) ctx.body = { ok: 0, msg: '用户未登录' };
     const user = await pool.query('SELECT * FROM friend WHERE (from_id=? AND to_id=? OR from_id=? AND to_id=?) AND (accept=0 OR accept=1)', [from_id, to, to, from_id]);
     if (user[0].length === 0) {
         await pool.query('INSERT INTO friend (from_id,to_id,accept) VALUES (?,?,?)', [from_id, to, from_id == to ? 1 : 0]);
@@ -69,8 +71,9 @@ router.post('/', async (ctx, next) => {
 router.get('/request', async (ctx, next) => {
     const user = ctx.query.user;
     const user_id = JWT.verify(user).id;
-    const res = await pool.query('SELECT * FROM users u inner join friend f on u.id=f.from_id WHERE f.to_id=?', [user_id]);
-    const myRes = await pool.query('SELECT * FROM users u inner join friend f on u.id=f.to_id WHERE f.from_id=?', [user_id]);
+    if (!user_id) ctx.body = { ok: 0, msg: '用户未登录' };
+    const res = await pool.query('SELECT u.id,u.username,u.email,u.avatar,f.create_time,f.accept,f.request_id,f.from_id,f.to_id FROM users u inner join friend f on u.id=f.from_id WHERE f.to_id=?', [user_id]);
+    const myRes = await pool.query('SELECT u.id,u.username,u.email,u.avatar,f.create_time,f.accept,f.request_id,f.from_id,f.to_id FROM users u inner join friend f on u.id=f.to_id WHERE f.from_id=?', [user_id]);
     const userList = res[0]
     const myRequest = myRes[0]
     ctx.body = { ok: 1, data: { request: userList, send: myRequest } };
@@ -79,14 +82,16 @@ router.get('/request', async (ctx, next) => {
 router.put('/', async (ctx, next) => {
     const { id, to } = ctx.request.body;
     const user_id = JWT.verify(to).id;
-    const res = await pool.query('UPDATE friend SET accept=1 WHERE to_id=? and request_id=?', [user_id, id]);
+    if (!user_id) ctx.body = { ok: 0, msg: '用户未登录' };
+    await pool.query('UPDATE friend SET accept=1 WHERE to_id=? and request_id=?', [user_id, id]);
     ctx.body = { ok: 1, msg: '添加成功！' };
 })
 
 router.delete('/', async (ctx, next) => {
     const { id, to } = ctx.query;
     const user_id = JWT.verify(to).id;
-    const res = await pool.query('UPDATE friend SET accept=-1 WHERE to_id=? and request_id=?', [user_id, id]);
+    if (!user_id) ctx.body = { ok: 0, msg: '用户未登录' };
+    await pool.query('UPDATE friend SET accept=-1 WHERE to_id=? and request_id=?', [user_id, id]);
     ctx.body = { ok: 1, msg: '拒绝成功！' };
 })
 

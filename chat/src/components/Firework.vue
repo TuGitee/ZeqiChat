@@ -123,39 +123,12 @@ export default {
     position: absolute;
     inset: 0;
     margin: auto;
-    color: transparent;
     height: fit-content;
     width: fit-content;
     font-size: 10vmin;
     letter-spacing: .5rem;
     font-weight: bold;
-    filter: drop-shadow(0px 0px 1px #000);
-    background: linear-gradient(90deg, black 0%, #9b7300 25%, #FFD700 50%, #9b7300 75%, black 100%);
-    background-size: 250% 250%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-animation: shining 10s linear infinite;
-    animation: shining 10s linear infinite;
+    filter: drop-shadow(0px 0px 5px #000);
     pointer-events: none;
-}
-
-@-webkit-keyframes shining {
-    from {
-        background-position: -500%;
-    }
-
-    to {
-        background-position: 500%;
-    }
-}
-
-@keyframes shining {
-    from {
-        background-position: -500%;
-    }
-
-    to {
-        background-position: 500%;
-    }
 }
 </style>

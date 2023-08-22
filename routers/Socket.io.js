@@ -7,8 +7,6 @@ function start(server) {
     io.on('connect', async (socket) => {
         const payload = JWT.verify(socket.handshake.query.token);
         socket.user = payload;
-        console.log('connect')
-        //  pool.query('update users set online=0')
         if (payload) {
             await pool.query('update users set online=1 where id=?', [socket.user.id])
         } else {
@@ -38,6 +36,44 @@ function start(server) {
 
         socket.on(WebSocketType.WorldRead, async () => {
             await pool.query('update world set read_list=concat(read_list,?) where from_id!=? and read_list not like ?', [`${socket.user.id},`, socket.user.id, `%${socket.user.id}%`])
+        })
+
+        socket.on(WebSocketType.FriendRequest, async (data) => {
+            io.sockets.sockets.forEach(item => {
+                if (item.user.id === Number(data.to)) {
+                    item.emit(WebSocketType.FriendRequest, createMessage(socket.user.username, {
+                        accept: 0,
+                        avatar: socket.user.avatar,
+                        username: socket.user.username,
+                        from_id: socket.user.id,
+                    }, socket.user.avatar, String(socket.user.id), +new Date()))
+                }
+            })
+        })
+
+        socket.on(WebSocketType.FriendAccept, async (data) => {
+            io.sockets.sockets.forEach(async item => {
+                if (item.user.id === Number(data.to)) {
+                    let last = await pool.query('select * from private where from_id=? and to_id=? or to_id=? and from_id=?', [item.user.id, socket.user.id, item.user.id, socket.user.id])
+                    last = last[0]
+                    item.emit(WebSocketType.FriendAccept, createMessage(socket.user.username, {
+                        avatar: socket.user.avatar,
+                        username: socket.user.username,
+                        id: socket.user.id,
+                        unread: 0,
+                        online: 1,
+                        last: last[last.length-1] ?? '',
+                    }, socket.user.avatar, String(socket.user.id), +new Date()))
+                }
+            })
+        })
+
+        socket.on(WebSocketType.FriendReject, async (data) => {
+            io.sockets.sockets.forEach(item => {
+                if (item.user.id === Number(data.to)) {
+                    item.emit(WebSocketType.FriendReject, createMessage(null, null, null, socket.user.id, +new Date()))
+                }
+            })
         })
 
         socket.on('disconnect', () => {

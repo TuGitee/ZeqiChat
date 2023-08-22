@@ -1,53 +1,75 @@
 <template>
-  <div class="border" id="border" @dragover.capture="dragover" @dragleave.capture="dragleave" @drop.capture="drop">
-    <div class="border-title">择栖聊天室</div>
-    <div class="border-hello">你好，<span v-html="formatMessage(removeSlash(username))"></span></div>
+  <div class="border" id="border" @dragover.capture="dragover" @dragleave.capture="dragleave" @drop.capture="drop"
+    :style="{ '--background-color': color }">
+    <div class="border-hello" v-if="!isMobile || !$route.name.includes('chat')">
+      <img :src="'https://zeqichat.xyz' + avatar" class="avatar" />你好，<span
+        v-html="filterMessage(formatMessage(username))"></span>
+    </div>
     <div class="home">
-      <ul class="home-list">
-        <li class="home-list-item">
+      <SideBar :to="to" :isMobile="isMobile" class="home-side"
+        v-if="!isMobile || !$route.name.includes('chat') && !$route.name.includes('post')" />
+      <ul class="home-list"
+        v-if="!isMobile || !$route.name.includes('chat') && !$route.name.includes('blog') && !$route.name.includes('post')">
+        <li class="home-list-item home-list-header">
           <div class="home-list-tool" @click="checkRequest">
             <i :class="isCheckRequest ? 'el-icon-chat-round' : 'el-icon-connection'"></i>
+            <i class="message" v-if="isRequest && !isCheckRequest || isCheckRequest && unread_count"></i>
           </div>
-          <form :action="false">
+          <form action="#" @submit.prevent="submitUser">
             <i class="el-icon-zoom-in home-list-item-icon" v-if="isAdd" @click="isAdd = !isAdd" title="添加好友"></i>
             <i class="el-icon-search home-list-item-icon" @click="isAdd = !isAdd" title="搜索用户" v-else></i>
-            <el-autocomplete v-model="state" :fetch-suggestions="querySearchAsync" :placeholder="isAdd ? '添加好友' : '搜索好友'"
-              @select="handleSelect" class="home-list-item-search" clearable>
+            <el-autocomplete v-model="state" :fetch-suggestions="querySearchAsync" :trigger-on-focus="false"
+              :placeholder="isAdd ? '添加好友' : '搜索好友'" @select="handleSelect" class="home-list-item-search" clearable>
               <template slot-scope="{ item }">
                 <h1 class="username">{{ item.username }}</h1>
                 <p class="email">{{ item.email }}</p>
               </template>
 
             </el-autocomplete>
-            <input class="home-list-item-search-btn" type="submit" :value="isAdd ? '添加' : '查询'" @click="submitUser" />
+            <input class="home-list-item-search-btn" type="submit" :value="isAdd ? '添加' : '查询'" />
           </form>
         </li>
         <UserItem v-for="user in friendList" :key="user.id" :user="user" @changeUser="changeUser" :to="to"
           v-if="!isCheckRequest"></UserItem>
+
         <li class="home-list-item home-list-hr" v-if="isCheckRequest">好友请求</li>
         <RequestItem v-for="user in requestList" :key="user.request_id" :user="user"
           v-if="isCheckRequest && user.from_id != userId" @resolveUser="resolveUser" @rejectUser="rejectUser">
         </RequestItem>
         <li class="home-list-item home-list-hr" v-if="isCheckRequest">我的请求</li>
         <RequestItem v-for="user in sendList" :key="user.request_id" :user="user" v-if="isCheckRequest"></RequestItem>
-
+        <li class="home-list-item loading" v-if="!friendList.length"><i class="el-icon-loading"></i> <span>正在加载中...</span>
+        </li>
       </ul>
       <router-view :server="server" :unread_msg="unread_msg" :isDrag="isDrag" :isChangeAvatar="isChangeAvatar"
         :onlineList="onlineList" :friendList="friendList" :isMobile="isMobile"
-        @cancelChangeAvatar="isChangeAvatar = false" @changeOnlinelist="changeOnlinelist"></router-view>
+        @cancelChangeAvatar="isChangeAvatar = false" @changeFriendlist="changeFriendlist"></router-view>
     </div>
-  </div>
-</template>
+    <ColorChange v-if="!isMobile" :color="color" @changeColor="changeColor" />
+    <div class="net">
+      <div class="net-type">Type:{{ netInfo.rtt <= 0 ? '无网络' : netInfo.effectiveType }}</div>
+          <div class="net-rtt">RTT:{{ netInfo.rtt }}</div>
+          <div class="net-status">
+            <div class="net-status-strength">
+              <div class="net-status-strength-bar" v-for="i in 3" :key="i"
+                :style="{ height: 33 * i + '%', backgroundColor: strength >= i ? strengthColor : '' }"></div>
+            </div>
+          </div>
+      </div>
+    </div>
+</div></template>
 
 <script>
 import { io } from "@/utils/socketio.js";
 
-import { removeSlash, formatMessage } from '@/utils/message'
+import { filterMessage, formatMessage } from '@/utils/message'
 import UserItem from "./UserItem";
 import RequestItem from "./RequestItem";
 import { WebSocketType } from "@/ws/index";
 
 import { Autocomplete } from 'element-ui'
+
+import { debounceFun } from "@/utils/debounce";
 
 export default {
   name: "Home",
@@ -56,7 +78,7 @@ export default {
       isDrag: false,
       to: 2023,
       WorldID: 2023,
-      server: io(`ws://47.120.2.219:8080?token=${localStorage.getItem("token")}`),
+      server: io(`wss://zeqichat.xyz?token=${localStorage.getItem("token")}`),
       onlineList: [],
       mobileShow: false,
       unread_msg: 0,
@@ -67,16 +89,29 @@ export default {
       friendList: [],
       requestList: [],
       sendList: [],
-      isAdd: true,
+      isAdd: false,
       isCheckRequest: false,
+      color: '#ff0000',
+      netInfo: {
+        effectiveType: '',
+        rtt: 0,
+      }
     }
   },
   components: {
     UserItem,
     RequestItem,
-    ElAutocomplete: Autocomplete,
+    [Autocomplete.name]: Autocomplete,
+    SideBar: () => import("./SideBar"),
+    ColorChange: () => import("@/components/ColorChange")
   },
   computed: {
+    strength() {
+      return this.netInfo.rtt <= 0 ? 0 : this.netInfo.rtt <= 150 ? 3 : this.netInfo.rtt <= 550 ? 2 : 1
+    },
+    strengthColor() {
+      return this.strength == 3 ? '#0edb0e' : this.strength == 2 ? '#ff7f00' : this.strength == 1 ? '#ff0000' : 'transparent'
+    },
     userId() {
       return localStorage.getItem("user");
     },
@@ -88,32 +123,57 @@ export default {
     },
     url() {
       return URL.createObjectURL(this.file)
+    },
+    avatar() {
+      return localStorage.getItem("avatar")
+    },
+    isRequest() {
+      return [...this.requestList, ...this.sendList].some(item => item.accept == 0)
+    },
+    unread_count() {
+      return this.friendList.reduce((a, b) => {
+        return a + b.unread ? b.unread : 0
+      }, 0)
     }
   },
   methods: {
-    removeSlash,
+    filterMessage,
     formatMessage,
+    debounceFun,
+    changeColor(color) {
+      this.color = color
+    },
     checkRequest() {
       this.isCheckRequest = !this.isCheckRequest
     },
     resolveUser(id) {
       this.requestList.find(item => item.request_id == id).accept = 1
       this.getFriend()
+      this.server.emit(WebSocketType.FriendAccept, {
+        to: this.requestList.find(item => item.request_id == id).from_id,
+      })
     },
     rejectUser(id) {
       this.requestList.find(item => item.request_id == id).accept = -1
-    },
-    async loadAll() {
-      const res = await this.$axios.get('/api/user')
-      this.allUserList = res.data.data
+      this.server.emit(WebSocketType.FriendReject, {
+        to: this.requestList.find(item => item.request_id == id).from_id,
+      })
     },
     handleSelect(item) {
       this.state = item.username
     },
     async querySearchAsync(queryString, cb) {
-      console.log(this.friendList);
-      const ls = queryString ? (this.isAdd ? this.allUserList.filter(item => item.username.includes(queryString) || item.email.includes(queryString)) : this.friendList.filter(item => item.username.includes(queryString)) || item.email.includes(queryString)) : []
-      cb(ls)
+      if (!queryString.trim()) return
+      const debounce = this.debounceFun(async () => {
+        if (this.isAdd) {
+          const res = await this.$axios.get(`/api/user?key=${queryString}`)
+          this.allUserList = res.data.data
+          cb(this.allUserList)
+        } else {
+          cb(this.friendList.filter(item => item.username.includes(queryString)) || item.email.includes(queryString))
+        }
+      }, 500)
+      debounce()
     },
     submitUser() {
       if (!this.state.trim()) return;
@@ -123,7 +183,10 @@ export default {
       else
         to = this.friendList.find(user => user.username === this.state)?.id
       if (!to) {
-        alert("该用户不存在")
+        this.$notify.error({
+          title: '出错',
+          message: "该用户不存在",
+        })
         return
       }
       if (this.isAdd) {
@@ -133,7 +196,13 @@ export default {
         }).then(res => {
           this.getRequestFriend()
           this.getFriend()
-          alert(res.data.msg)
+          this.server.emit(WebSocketType.FriendRequest, {
+            to
+          })
+          this.$notify.success({
+            title: '成功',
+            message: res.data.msg,
+          })
         })
       }
       else {
@@ -145,7 +214,7 @@ export default {
           }
         })
         this.$nextTick(() => {
-          document.querySelector('.user.active').scrollIntoView({
+          document.querySelector('.user.active')?.scrollIntoView({
             behavior: 'smooth',
             block: 'center',
             inline: 'nearest'
@@ -159,8 +228,8 @@ export default {
     },
     async getRequestFriend() {
       let res = await this.$axios.get(`/api/friend/request?user=${this.token}`)
-      this.requestList = res.data.data.request
-      this.sendList = res.data.data.send
+      this.requestList = res.data.data.request.reverse()
+      this.sendList = res.data.data.send.reverse()
     },
     dragover(e) {
       e.preventDefault()
@@ -174,7 +243,6 @@ export default {
       this.isDrag = false
     },
     async changeUser(id) {
-
       if (id === null) return;
 
       if (this.to == id && id == this.userId && !this.isMobile) {
@@ -182,7 +250,8 @@ export default {
         return;
       }
 
-      if (this.to === id && !this.isMobile) return;
+      if (this.to === id && !this.isMobile && this.$route.name === 'chat') return;
+
       this.to = id
 
       if (this.isMobile) {
@@ -200,32 +269,41 @@ export default {
             id
           }
         })
-
     },
-    changeOnlinelist(id, last) {
-      const cur = this.onlineList.splice(this.onlineList.findIndex(user => user.id == id), 1)
+    changeFriendlist(id, last) {
+      const cur = this.friendList.splice(this.friendList.findIndex(user => user.id == id), 1)
       cur[0].last = last
-      this.onlineList = [...cur, ...this.onlineList]
+      this.friendList.unshift(cur[0])
     },
     async init() {
+      let net = navigator.connection
+      net.addEventListener('change', (e) => {
+        this.netInfo.effectiveType = e.target.effectiveType
+        this.netInfo.rtt = e.target.rtt
+      })
+      this.netInfo.effectiveType = net.effectiveType
+      this.netInfo.rtt = net.rtt
+
       this.server.emit(WebSocketType.GroupList);
-      await this.loadAll()
       await this.getFriend()
       await this.getRequestFriend()
 
       window.addEventListener('resize', this.getMobile)
 
-      if (localStorage.getItem("to")) {
-        this.to = localStorage.getItem("to");
-      }
+      this.to = localStorage.getItem("to") ?? this.WorldID;
 
       if (!this.isMobile) {
-        this.$router.replace({
-          name: "chat",
-          params: {
-            id: localStorage.getItem("to") ?? this.WorldID
-          }
-        });
+        if (this.$route.name === 'home') {
+          this.$router.replace({
+            name: "chat",
+            params: {
+              id: this.to
+            }
+          });
+        }
+
+      } else {
+        this.to = -1
       }
     },
 
@@ -248,10 +326,33 @@ export default {
 
     this.init();
 
+    this.$bus.$on('changeInfo', () => {
+      this.isChangeAvatar = true
+    })
+
+    this.$bus.$on('mobileBack', () => {
+      if (this.isMobile) {
+        this.to = -1
+      }
+    })
+
+    this.server.on(WebSocketType.FriendRequest, (data) => {
+      this.getRequestFriend()
+    })
+
+    this.server.on(WebSocketType.FriendAccept, (data) => {
+      this.friendList.unshift(data.data)
+      this.sendList.find(item => item.to_id == data.id).accept = 1
+    })
+
+    this.server.on(WebSocketType.FriendReject, (data) => {
+      this.sendList.find(item => item.to_id == data.id).accept = -1
+    })
+
   },
   beforeDestroy() {
     this.server.disconnect();
-    window.indexedDB.deleteDatabase("chat");
+
   },
   watch: {
     onlineList() {
@@ -301,21 +402,18 @@ export default {
   color: #ddd;
 }
 
-
-.border {
-  --bar-color: #fff;
-  --BoarderTop: calc(30px + constant(safe-area-inset-top));
-  --BoarderTop: calc(30px + env(safe-area-inset-top));
-  --BoarderLeft: calc(30px + constant(safe-area-inset-left));
-  --BoarderLeft: 30px;
-}
-
 .home::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
 .border {
+  --bar-color: #fff;
+  --BoarderTop: calc(50px + constant(safe-area-inset-top));
+  --BoarderTop: calc(50px + env(safe-area-inset-top));
+  --BoarderLeft: calc(0px + constant(safe-area-inset-left));
+  --BoarderLeft: calc(0px + env(safe-area-inset-left));
+  --background-color: #ff0000;
   height: 80%;
   width: 60%;
   position: absolute;
@@ -326,11 +424,11 @@ export default {
   margin: auto;
   z-index: -99;
   color: white;
-  background-color: hsla(0, 100%, 50%, 1);
+  background-color: var(--background-color);
   background-image:
     radial-gradient(at 40% 20%, hsla(28, 100%, 74%, 1) 0px, transparent 50%),
     radial-gradient(at 0% 50%, hsla(355, 100%, 93%, 1) 0px, transparent 50%),
-    radial-gradient(at 61% 48%, hsla(340, 100%, 76%, 1) 0px, transparent 50%),
+    radial-gradient(at 60% 40%, hsla(340, 100%, 76%, 1) 0px, transparent 50%),
     radial-gradient(at 0% 100%, hsla(22, 100%, 77%, 1) 0px, transparent 50%),
     radial-gradient(at 0% 0%, hsla(343, 100%, 76%, 1) 0px, transparent 50%);
   border-radius: 15px;
@@ -341,6 +439,58 @@ export default {
   max-width: 100vw;
   transition: none;
   overflow: hidden;
+
+  .color {
+    position: absolute;
+    top: 10px;
+    left: 39px;
+    transform: translateX(-50%);
+  }
+
+  .net {
+    position: absolute;
+    right: 10px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font-size: 14px;
+    font-weight: bold;
+
+    .net-type {
+      font-size: 12px;
+    }
+
+    .net-rtt {
+      font-size: 12px;
+    }
+
+    .net-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+
+      .net-status-strength {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 20px;
+        box-sizing: content-box;
+        padding: 5px;
+        background-color: #fffa;
+        border-radius: 5px;
+        box-shadow: 1px 1px 2px #000;
+
+        &-bar {
+          width: 5px;
+          background-color: #eee8;
+          box-shadow: 1px 1px 2px #000;
+        }
+      }
+    }
+  }
 }
 
 .border::-webkit-resizer {
@@ -362,6 +512,7 @@ export default {
   text-align: center;
   line-height: 2;
   height: auto;
+  white-space: break-all;
   top: 50%;
   transform: translateY(-50%);
   font-weight: bold;
@@ -376,6 +527,17 @@ export default {
   height: var(--BoarderTop);
   line-height: var(--BoarderTop);
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .avatar {
+    height: 30px;
+    width: 30px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
 }
 
 .border .home {
@@ -389,7 +551,6 @@ export default {
   box-sizing: border-box;
   color: #333;
   word-break: break-word;
-  justify-content: space-between;
   gap: 10px;
 }
 
@@ -410,9 +571,12 @@ export default {
   margin: 0;
   height: 100%;
   list-style: none;
-  width: 30%;
+  width: 35%;
+  padding: 0 10px 20px 5px;
   border-radius: 10px;
   overflow-y: overlay;
+  min-width: 260px;
+  max-width: 320px;
 
   &::-webkit-scrollbar {
     width: 0;
@@ -431,6 +595,12 @@ export default {
     display: flex;
     gap: 5px;
 
+
+    &.home-list-header {
+      backdrop-filter: blur(10px);
+      z-index: 99;
+    }
+
     .home-list-tool {
       height: 2rem;
       width: 2rem;
@@ -440,10 +610,21 @@ export default {
       line-height: 2rem;
       border-radius: inherit;
       background-color: #fffe;
+      position: relative;
 
       &:hover {
         cursor: pointer;
         background-color: #fffe;
+      }
+
+      .message {
+        height: 6px;
+        width: 6px;
+        position: absolute;
+        right: 0;
+        top: 0;
+        background-color: red;
+        border-radius: 50%;
       }
     }
 
@@ -478,8 +659,8 @@ export default {
       border-radius: inherit;
       position: relative;
       flex: 1;
-      background-color: #fffd;
       overflow: hidden;
+      gap: 5px;
 
       .home-list-item-icon {
         position: absolute;
@@ -496,7 +677,8 @@ export default {
         display: block;
         outline: none;
         border: none;
-        background-color: transparent;
+        background-color: #fffe;
+        border-radius: 10px;
 
         /deep/ .el-input--suffix {
           height: 100%;
@@ -504,11 +686,11 @@ export default {
           .el-input__inner {
             padding: 0;
             border: none;
-            background-color: transparent;
             height: 100%;
             line-height: 100%;
             padding-left: 2rem;
             padding-right: 2rem;
+            border-radius: 10px;
           }
         }
 
@@ -532,67 +714,158 @@ export default {
       }
 
     }
+
+    &.loading {
+      pointer-events: none;
+      color: white;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 20px;
+      margin: auto;
+      align-items: center;
+      justify-content: center;
+    }
   }
 }
 
 @media screen and (max-width: 600px) {
   .border {
-    width: 100%;
-    height: 100%;
-    padding-top: constant(safe-area-inset-top);
-    padding-top: env(safe-area-inset-top);
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;
     min-width: 0;
     min-height: 0;
+    max-height: 100vh;
+    max-width: 100vw;
     border-radius: 10px;
     display: flex;
     flex-direction: column;
-    position: static;
+    overflow: hidden;
+    top: 0;
+    left: 0;
     border: none;
     background-color: transparent;
     background: transparent;
-    height: 100vh;
-  }
+    resize: none;
+    bottom: auto;
+    right: auto;
+    margin: 0;
 
-  .border::after {
-    content: "";
-    height: 100%;
-    width: 100%;
-    position: fixed;
-    inset: 0;
-    z-index: -99;
-    background-color: hsl(0, 100%, 50%);
-    background-image: radial-gradient(at 40% 20%, hsl(28, 100%, 74%) 0px, transparent 50%), radial-gradient(at 0% 50%, hsl(355, 100%, 93%) 0px, transparent 50%), radial-gradient(at 61% 48%, hsl(340, 100%, 76%) 0px, transparent 50%), radial-gradient(at 0% 100%, hsl(22, 100%, 77%) 0px, transparent 50%), radial-gradient(at 0% 0%, hsl(343, 100%, 76%) 0px, transparent 50%);
+    &::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+      z-index: -999;
+      background: linear-gradient(#C32F01 50%, #fff 50%);
+    }
   }
 
   .border .border-hello {
-    display: none;
+    position: fixed;
+    width: 100%;
+    box-sizing: content-box;
+    padding-top: constant(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
+    height: 50px;
+    left: auto;
+    transform: none;
+    line-height: 50px;
+    background-color: #C32F01;
+    z-index: 999;
   }
 
   .border .border-title {
-    position: static;
-    width: 100%;
-    height: 50px;
-    transform: none;
-    line-height: 50px;
+    display: none;
   }
 
   .border .home {
     width: 100%;
-    position: relative;
+    height: calc(100vh - var(--BoarderTop));
+    margin-top: var(--BoarderTop);
+    box-sizing: border-box;
     flex-direction: column;
     border-radius: 0;
     border: none;
     overflow: hidden;
+    position: static;
+    background-color: white;
+
+    .home-side {
+      height: 55px;
+      width: 100%;
+      padding: 0;
+      position: fixed;
+      bottom: 0;
+      padding-bottom: constant(safe-area-inset-bottom);
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 999;
+      background-color: white;
+      border-top: 0.1px solid #ccc;
+
+      /deep/ .list {
+        width: 100%;
+        height: 100%;
+        flex-direction: row;
+        justify-content: space-evenly;
+      }
+    }
   }
 
   .border .home::after {
     content: "";
+    display: none;
   }
 
   .border .home .home-list {
     width: 100%;
-    padding: 0 20px calc(20px + constant(safe-area-inset-bottom));
-    padding: 0 20px calc(20px + env(safe-area-inset-bottom));
+    height: calc(100% - 55px);
+    padding: 0px 0px calc(20px + constant(safe-area-inset-bottom));
+    padding: 0px 0px calc(20px + env(safe-area-inset-bottom));
+    min-width: none;
+    max-width: none;
+
+    /deep/ .active {
+      box-shadow: none;
+    }
+  }
+
+
+
+  .home-list-item.home-list-header {
+    backdrop-filter: blur(10px);
+    z-index: 99;
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-bottom: 5px;
+    border-bottom: 0.1px solid #eee;
+    border-radius: 0;
+    box-sizing: content-box;
+  }
+
+  .home-list-tool {
+    background-color: #eee !important;
+    border-radius: 10px !important;
+  }
+
+  form {
+    gap: 5px;
+    border-radius: 10px !important;
+
+
+
+    .home-list-item-search {
+      background-color: #eee !important;
+      border-radius: inherit !important;
+    }
+
+    .home-list-item-search-btn {
+      background-color: #eee !important;
+      border-radius: inherit !important;
+    }
   }
 
 }

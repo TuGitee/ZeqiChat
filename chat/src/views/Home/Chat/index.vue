@@ -1,24 +1,33 @@
 <template>
     <div class="home-content" :class="{ 'home-content__show': to }" ref="box" :style="{ height }">
+        <div class="mask" v-if="!isFriend">
+            <p>对方不是您的好友，无法发送消息</p>
+            <p>请添加好友后重试</p>
+        </div>
         <transition name="el-fade-in">
             <Firework :text="text" v-if="isFirework"></Firework>
         </transition>
         <div class=" home-content-title">
-            <div class="home-content-title-box">
-                <a class="home-content-title-back" id="back" href="javascript:;" v-if="isMobile" @click="goBack"></a>
-                <img :src="`http://47.120.2.219:3000${avatar}`" class="home-content-title-img" v-if="avatar" alt="">
-                <span class="home-content-title-name" v-html="formatMessage(removeSlash(username))"></span>
-            </div>
+            <router-link :to="{
+                name: 'blog',
+                params: {
+                    id: to
+                }
+            }">
+                <div class="home-content-title-box">
+                    <a class="home-content-title-back" id="back" href="javascript:;" v-if="isMobile" @click="goBack"></a>
+                    <img :src="`https://zeqichat.xyz${avatar}`" class="home-content-title-img" v-if="avatar" alt="">
+                    <span class="home-content-title-name" v-html="filterMessage(formatMessage(username))"></span>
+                </div>
+            </router-link>
             <a id="logout" href="javascript:;" @click="logout">退出</a>
         </div>
         <div class="home-content-content" id="chat-content" ref="contentList" @scroll="handleScroll">
             <el-collapse-transition>
-                <div class=" home-content-content-item__end" v-if="scrollFlag">{{ "消息到底了，快去和TA聊天吧！" }}
-                </div>
+                <div class=" home-content-content-item__end" v-if="scrollFlag && msgList.length">消息到底了，快去和TA聊天吧！</div>
             </el-collapse-transition>
-            <div class="home-content-content-item__end" v-if="!messageEnd">{{ "消息加载中..." }}
-            </div>
-            <ChatItem v-for="  msg   in   msgList  " :key="msg.id" :msg="msg"></ChatItem>
+            <div class="home-content-content-item__end" v-if="!messageEnd">消息加载中...</div>
+            <ChatItem v-for="msg in msgList" :key="msg.msg_id" :msg="msg"></ChatItem>
             <div class="bubble" v-if="unread_msg" @click="bubbleClick">{{ unread_msg }}</div>
         </div>
         <div class="home-content-input" ref="input">
@@ -32,7 +41,7 @@
             <div class="home-content-input-btns">
                 <a href="javascript:;" id="voice" class="home-content-input-btns__voice" @mousedown="recordVoice"
                     @mouseup="sendVoice" @mouseleave="cancelVoice" @touchstart="recordVoice" @touchend="sendVoice"
-                    @touchleave="cancelVoice">
+                    @touchleave="cancelVoice" title="按住说话">
                     <svg t="1690709285923" class="icon" viewBox="0 0 1024 1024" version="1.1"
                         xmlns="http://www.w3.org/2000/svg" p-id="2312" width="20" height="20">
                         <path d="M256 512m-64 0a64 64 0 1 0 128 0 64 64 0 1 0-128 0Z" fill="#333333" p-id="2313"></path>
@@ -61,7 +70,7 @@
 import ChangeAvatar from '../ChangeAvatar';
 import Upload from '../Upload';
 import ChatItem from "./ChatItem";
-import { removeSlash, formatMessage } from "@/utils/message";
+import { filterMessage, formatMessage } from "@/utils/message";
 import MonitorKeyboard from '@/utils/MonitorKeyboard.js';
 import { WebSocketType } from "@/ws/index";
 export default {
@@ -118,23 +127,32 @@ export default {
             height: '100%',
             timer: null,
             mediaRecorder: null,
+            recognition: null,
             text: '',
-            isFirework: false
+            isFirework: false,
+            controller: null
         }
     },
     methods: {
-        recordVoice() {
-            navigator.mediaDevices.getUserMedia({
+        async recordVoice() {
+            const stream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
                 video: false
-            }).then(stream => {
-                this.mediaRecorder ?? (this.mediaRecorder = new MediaRecorder(stream));
-                this.mediaRecorder.start();
-
             })
-        },
-        sendVoice() {
-            this.mediaRecorder?.stop();
+
+            this.mediaRecorder ?? (this.mediaRecorder = new MediaRecorder(stream));
+            this.mediaRecorder.start();
+            let text = '';
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            this.recognition ?? (this.recognition = new SpeechRecognition());
+            this.recognition.lang = 'zh-CN';
+            this.recognition.start();
+
+            this.recognition.onresult = e => {
+                text = e.results[0][0].transcript;
+            }
+
             this.mediaRecorder.ondataavailable = e => {
                 const blob = new Blob([e.data], {
                     type: 'audio/mpeg'
@@ -143,31 +161,43 @@ export default {
                 const formData = new FormData();
                 formData.append('audio', blob);
 
+                setTimeout(() => {
+                    this.msgList.push({
+                        username: localStorage.getItem("username"),
+                        avatar: localStorage.getItem("avatar"),
+                        message: `<audio src="${URL.createObjectURL(blob)}" data-value="${text}"></audio>`,
+                        create_time: new Date(),
+                        delta: new Date() - new Date(this.msgList[this.msgList.length - 1].create_time)
+                    })
+                    this.scrollToBottom(this.$refs.contentList);
+                })
+
                 this.$axios.post(`/api/audio`, formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data'
                     }
                 }).then(res => {
-                    if (this.to == this.WorldID)
-                        this.server.emit(WebSocketType.GroupChat, this.createMessage(null, `<audio src="${res.data.audio}"></audio>`));
-                    else
-                        this.server.emit(WebSocketType.PrivateChat, this.createMessage(null, `<audio src="${res.data.audio}"></audio>`, this.to));
+                    setTimeout(() => {
+                        if (this.to == this.WorldID)
+                            this.server.emit(WebSocketType.GroupChat, this.createMessage(null, `<audio src="${res.data.audio}" data-value="${text}"></audio>`));
+                        else
+                            this.server.emit(WebSocketType.PrivateChat, this.createMessage(null, `<audio src="${res.data.audio}" data-value="${text}"></audio>`, this.to));
 
-                    this.msgList.push({
-                        username: localStorage.getItem("username"),
-                        avatar: localStorage.getItem("avatar"),
-                        message: `<audio src="${res.data.audio}"></audio>`,
-                        create_time: new Date(),
-                        delta: new Date() - new Date(this.msgList[this.msgList.length - 1].create_time)
-                    })
+                        this.pageDelta++;
 
-                    this.scrollToBottom(this.$refs.contentList);
-                    this.pageDelta++;
+                        this.mediaRecorder.ondataavailable = null
+                    }, 100)
 
-                    this.mediaRecorder.ondataavailable = null
                 });
 
             }
+
+        },
+        sendVoice() {
+            if (!this.mediaRecorder) return;
+            if (!this.recognition) return;
+            this.recognition.stop();
+            this.mediaRecorder.stop();
         },
         cancelVoice() {
             this.mediaRecorder?.stop();
@@ -208,7 +238,7 @@ export default {
                 }, 1000)
             } else if (e.target.scrollTop === 0) {
                 const bottom = e.target.scrollHeight - e.target.scrollTop;
-                if (this.to === this.WorldID) {
+                if (this.to == this.WorldID) {
                     await this.getWorldData();
                 } else {
                     await this.getPrivateData();
@@ -226,6 +256,7 @@ export default {
         },
         goBack() {
             this.$router.replace('/home')
+            this.$bus.$emit("mobileBack")
         },
         cancel() {
             this.$emit('cancelChangeAvatar')
@@ -301,7 +332,7 @@ export default {
             }
 
             this.msgList.push(msg)
-            this.$emit('changeOnlinelist', this.to, msg)
+            this.$emit('changeFriendlist', this.to, msg)
 
             this.scrollToBottom(this.$refs.contentList);
 
@@ -315,13 +346,19 @@ export default {
             if (this.isRequestData) return;
             this.isRequestData = true
             await this.$axios
-                .get(`/api/chat/world?pageNo=${this.pageNo}&pageDelta=${this.pageDelta}`)
+                .get(`/api/chat/world?pageNo=${this.pageNo}&pageDelta=${this.pageDelta}`, {
+                    signal: this.controller.signal
+                })
                 .then((res) => {
                     if (!res.data.ok) {
                         this.messageEnd = true;
                         return;
                     }
                     const data = res.data.msg;
+                    if (data.length < 20) {
+                        console.log(data);
+                        this.messageEnd = true;
+                    }
                     this.msgList.unshift(...data)
                     for (let i = 0; i < Math.min(data.length + 1, this.msgList.length); i++) {
                         if (i === 0)
@@ -331,6 +368,8 @@ export default {
                     }
                     this.pageNo++;
                     this.isRequestData = false
+                }).catch(e => {
+                    console.log(e)
                 });
         },
         async getPrivateData() {
@@ -338,7 +377,9 @@ export default {
             this.isRequestData = true
             await this.$axios
                 .get(
-                    `/api/chat/private?from=${this.token}&to=${this.to}&pageNo=${this.pageNo}&pageDelta=${this.pageDelta}`
+                    `/api/chat/private?from=${this.token}&to=${this.to}&pageNo=${this.pageNo}&pageDelta=${this.pageDelta}`, {
+                    signal: this.controller.signal
+                }
                 )
                 .then((res) => {
                     if (!res.data.ok) {
@@ -346,6 +387,9 @@ export default {
                         return;
                     }
                     const data = res.data.msg;
+                    if (data.length < 20) {
+                        this.messageEnd = true;
+                    }
                     this.msgList.unshift(...data)
                     for (let i = 0; i < Math.min(data.length + 1, this.msgList.length); i++) {
                         if (i === 0)
@@ -355,6 +399,8 @@ export default {
                     }
                     this.pageNo++;
                     this.isRequestData = false
+                }).catch(e => {
+                    console.log(e)
                 });
         },
         async toBottom() {
@@ -417,50 +463,56 @@ export default {
             } else if (item.id === this.userId) {
                 return;
             } else {
-                this.friendList.find(user => user.id == item.id).unread++;
+                this.friendList.find(user => user.id == item.id).unread += 1;
             }
 
-            this.$emit('changeOnlinelist', item.id, msg);
+            this.$emit('changeFriendlist', item.id, msg);
 
-            const db = await this.openDB("chat", this.version);
-            const transaction = db.transaction(["info"], "readwrite");
-            const objectStore = transaction.objectStore("info");
+            // const db = await this.openDB("chat", this.version);
+            // const transaction = db.transaction(["info"], "readwrite");
+            // const objectStore = transaction.objectStore("info");
 
-            const request = objectStore.get(Number(item.id));
+            // const request = objectStore.get(Number(item.id));
 
-            let res = await new Promise((resolve) => {
-                request.onsuccess = () => {
-                    resolve(request.result);
-                }
-            })
+            // let res = await new Promise((resolve) => {
+            //     request.onsuccess = () => {
+            //         resolve(request.result);
+            //     }
+            // })
 
-            if (!!res)
-                await new Promise((resolve) => {
-                    const request = objectStore.put({
-                        id: Number(item.id),
-                        msgList: [...res.msgList, msg],
-                        pageDelta: res.pageDelta + 1,
-                        pageNo: res.pageNo,
-                        messageEnd: res.messageEnd,
-                        scrollFlag: res.scrollFlag,
-                        unread_msg: res.unread_msg,
-                        isRequestData: res.isRequestData
-                    });
+            // if (!!res)
+            //     await new Promise((resolve) => {
+            //         const request = objectStore.put({
+            //             id: Number(item.id),
+            //             msgList: [...res.msgList, msg],
+            //             pageDelta: res.pageDelta + 1,
+            //             pageNo: res.pageNo,
+            //             messageEnd: res.messageEnd,
+            //             scrollFlag: res.scrollFlag,
+            //             unread_msg: res.unread_msg,
+            //             isRequestData: res.isRequestData
+            //         });
 
-                    request.onsuccess = () => {
-                        resolve();
-                    }
-                })
+            //         request.onsuccess = () => {
+            //             resolve();
+            //         }
+            //     })
         },
         uploadImage(e) {
             const file = e.target.files[0];
             if (!/image\/\w+/.test(file.type)) {
-                alert("请确保文件为图像类型!");
+                this.$notify.warning({
+                    title: '警告',
+                    message: "请确保文件为图像类型!",
+                });
                 e.target.value = "";
                 return;
             }
             if (file.size > 200 * 1024) {
-                alert("图片大小不得超过200KB! 请压缩图片! ");
+                this.$notify.warning({
+                    title: '警告',
+                    message: "图片大小不得超过200KB! 请压缩图片! ",
+                });
                 e.target.value = "";
                 return;
             }
@@ -507,42 +559,51 @@ export default {
             })
         },
         async init() {
-            const db = await this.openDB("chat", this.version);
-            const transaction = db.transaction(["info"], "readwrite");
-            const objectStore = transaction.objectStore("info");
+            // const db = await this.openDB("chat", this.version);
+            // const transaction = db.transaction(["info"], "readwrite");
+            // const objectStore = transaction.objectStore("info");
 
-            await new Promise((resolve) => {
-                const request = objectStore.get(this.to);
-                request.onsuccess = (event) => {
-                    if (request.result) {
-                        this.pageDelta = request.result.pageDelta;
-                        this.pageNo = request.result.pageNo;
-                        this.msgList = request.result.msgList;
-                        this.messageEnd = request.result.messageEnd;
-                        this.scrollFlag = request.result.scrollFlag;
-                        this.isRequestData = request.result.isRequestData;
-                    }
-                    else {
-                        this.pageDelta = 0;
-                        this.pageNo = 0;
-                        this.msgList = [];
-                        this.messageEnd = false;
-                        this.scrollFlag = false;
-                        this.isRequestData = false;
-                    }
-                    if (!this.msgList.length) this.getMessage();
+            // await new Promise((resolve) => {
+            //     const request = objectStore.get(this.to);
+            //     request.onsuccess = (event) => {
+            //         if (request.result) {
+            //             this.pageDelta = request.result.pageDelta;
+            //             this.pageNo = request.result.pageNo;
+            //             this.msgList = request.result.msgList;
+            //             this.messageEnd = request.result.messageEnd;
+            //             this.scrollFlag = request.result.scrollFlag;
+            //             this.isRequestData = request.result.isRequestData;
+            //         }
+            //         else {
+            //             this.pageDelta = 0;
+            //             this.pageNo = 0;
+            //             this.msgList = [];
+            //             this.messageEnd = false;
+            //             this.scrollFlag = false;
+            //             this.isRequestData = false;
+            //         }
+            //         if (!this.msgList.length) this.getMessage();
 
-                    resolve();
-                }
-            })
+            //         resolve();
+            //     }
+            // })
+
+            this.pageDelta = 0;
+            this.pageNo = 0;
+            this.msgList = [];
+            this.messageEnd = false;
+            this.scrollFlag = false;
+            this.isRequestData = false;
+            this.mediaRecorder = null;
+            this.recognition = null;
+            await this.getMessage();
 
             this.scrollToBottom(this.$refs.contentList);
 
             this.avatar = this.friendList.find(user => user.id == this.to)?.avatar
             this.username = this.friendList.find(user => user.id == this.to)?.username
-
         },
-        removeSlash,
+        filterMessage,
         formatMessage,
         async getMessage() {
             if (this.to == this.WorldID) {
@@ -556,52 +617,51 @@ export default {
             this.scrollToBottom(this.$refs.contentList);
         },
         openDB(dbName, version = 1) {
-            return new Promise((resolve, reject) => {
-                const indexedDB =
-                    window.indexedDB ||
-                    window.mozIndexedDB ||
-                    window.webkitIndexedDB ||
-                    window.msIndexedDB;
-                let db;
-                const request = indexedDB.open(dbName, version);
-                request.onsuccess = function (event) {
-                    db = event.target.result;
-                    resolve(db);
-                };
-                request.onerror = function (event) {
-                    console.log("数据库打开报错");
-                };
-                request.onupgradeneeded = function (event) {
-                    db = event.target.result;
-                    if (!db.objectStoreNames.contains("info")) {
-                        const objectStore = db.createObjectStore("info", {
-                            keyPath: "id",
-                        });
-                        objectStore.createIndex("id", "id", {
-                            unique: true,
-                        });
-                    }
-                };
-            })
+            // return new Promise((resolve, reject) => {
+            //     const indexedDB =
+            //         window.indexedDB ||
+            //         window.mozIndexedDB ||
+            //         window.webkitIndexedDB ||
+            //         window.msIndexedDB;
+            //     let db;
+            //     const request = indexedDB.open(dbName, version);
+            //     request.onsuccess = function (event) {
+            //         db = event.target.result;
+            //         resolve(db);
+            //     };
+            //     request.onerror = function (event) {
+            //         console.log("数据库打开报错");
+            //     };
+            //     request.onupgradeneeded = function (event) {
+            //         db = event.target.result;
+            //         if (!db.objectStoreNames.contains("info")) {
+            //             const objectStore = db.createObjectStore("info", {
+            //                 keyPath: "id",
+            //             });
+            //             objectStore.createIndex("id", "id", {
+            //                 unique: true,
+            //             });
+            //         }
+            //     };
+            // })
         },
         async saveInfo(oldVal) {
-            const db = await this.openDB("chat", this.version);
-            const data = {
-                pageDelta: this.pageDelta,
-                pageNo: this.pageNo,
-                msgList: this.msgList,
-                messageEnd: this.messageEnd,
-                scrollFlag: this.scrollFlag,
-                isRequestData: this.isRequestData,
-                id: Number(oldVal),
-            }
-            const transaction = db.transaction(["info"], "readwrite");
-            const objectStore = transaction.objectStore("info");
-            try {
-                objectStore.put(data);
-            } catch (e) { }
+            // const db = await this.openDB("chat", this.version);
+            // const data = {
+            //     pageDelta: this.pageDelta,
+            //     pageNo: this.pageNo,
+            //     msgList: this.msgList,
+            //     messageEnd: this.messageEnd,
+            //     scrollFlag: this.scrollFlag,
+            //     isRequestData: this.isRequestData,
+            //     id: Number(oldVal),
+            // }
+            // const transaction = db.transaction(["info"], "readwrite");
+            // const objectStore = transaction.objectStore("info");
+            // try {
+            //     objectStore.put(data);
+            // } catch (e) { }
         },
-
     },
     mounted() {
         this.getKeyboardState();
@@ -617,8 +677,6 @@ export default {
                 this.height = '100%'
             }
         }
-
-        this.init();
 
         this.$bus.$on('firework', (data) => {
             this.text = data.text ?? ''
@@ -654,7 +712,8 @@ export default {
     },
     async beforeDestroy() {
         this.monitorKeyboard.onEnd();
-        await this.saveInfo(this.to)
+        // await this.saveInfo(this.to)
+        this.controller?.abort();
     },
     computed: {
         to() {
@@ -669,20 +728,28 @@ export default {
         userId() {
             return localStorage.getItem("user");
         },
+        isFriend() {
+            return this.friendList.find(user => user.id == this.to)
+        }
     },
     watch: {
-        async to(newVal, oldVal) {
-            localStorage.setItem("to", this.to);
-            this.avatar = this.friendList.find(user => user.id == this.to)?.avatar
-            this.username = this.friendList.find(user => user.id == this.to)?.username
-            if (oldVal == this.WorldID) {
-                this.isRequestData = false
-                this.messageEnd = false
+        to: {
+            immediate: true,
+            async handler(newVal, oldVal) {
+                if (newVal === oldVal) return
+                this.controller?.abort();
+                this.controller = new AbortController()
+                localStorage.setItem("to", this.to);
+                this.avatar = this.friendList.find(user => user.id == this.to)?.avatar
+                this.username = this.friendList.find(user => user.id == this.to)?.username
+                await this.init();
             }
-            await this.saveInfo(oldVal);
-            await this.init();
         },
         onlineList() {
+            this.avatar = this.friendList.find(user => user.id == this.to)?.avatar ?? this.avatar
+            this.username = this.friendList.find(user => user.id == this.to)?.username ?? this.username
+        },
+        friendList() {
             this.avatar = this.friendList.find(user => user.id == this.to)?.avatar ?? this.avatar
             this.username = this.friendList.find(user => user.id == this.to)?.username ?? this.username
         }
@@ -696,7 +763,7 @@ export default {
     padding: 0;
     margin: 0;
     list-style: none;
-    width: 70%;
+    width: 100%;
     height: 100%;
     border-radius: 10px;
     background: #fffa;
@@ -710,6 +777,26 @@ export default {
     overflow: hidden;
     perspective: 500px;
     z-index: 999;
+
+    .mask {
+        height: 100%;
+        width: 100%;
+        position: absolute;
+        background-color: #000A;
+        z-index: 999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+
+        p {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0;
+            padding: 5px;
+        }
+    }
 }
 
 .home-content .home-content-title {
@@ -729,11 +816,20 @@ export default {
     font-weight: bold;
     position: fixed;
     text-align: left;
-    z-index: 999;
+    z-index: 9;
     overflow: hidden;
     border-radius: inherit;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
+
+    a {
+        text-decoration: none;
+        color: #333;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
 
     &-box {
         display: flex;
@@ -953,7 +1049,7 @@ export default {
         height: 100%;
         width: 100vw;
         position: fixed;
-        z-index: 999;
+        z-index: 1000000;
         background-color: white;
         flex-direction: column;
         border-left: 1px solid #fcfcfc;
@@ -963,6 +1059,7 @@ export default {
         left: 100%;
         border: none;
         border-radius: 0;
+
     }
 
     .home-content__show {

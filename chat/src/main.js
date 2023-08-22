@@ -10,7 +10,7 @@ Vue.prototype.$axios = axios
 
 import hl from 'highlight.js'
 hl.configure({
-  ignoreUnescapedHTML: true
+  ignoreUnescapedHTML: true,
 })
 import { lineNumbersBlock } from '@/assets/js/hljs-number'
 
@@ -29,13 +29,36 @@ import CollapseTransition from 'element-ui/lib/transitions/collapse-transition';
 
 Vue.component(CollapseTransition.name, CollapseTransition)
 
+import { Notification, MessageBox, Loading } from 'element-ui';
+Vue.prototype.$notify = Notification
+Vue.prototype.$confirm = MessageBox.confirm
+Vue.prototype.$alert = MessageBox.alert
+
+Vue.use(Loading);
+Vue.use(Loading.directive);
+
 import Firework from '@/components/Firework'
 Vue.component(Firework.name, Firework)
+
+import preview from 'vue-photo-preview'
+import "vue-photo-preview/dist/skin.css"
+
+const options = {
+  fullscreenEl: false,
+  closeEl: false,
+  tapToClose: true,
+  zoomEl: false, //控制是否显示放大缩小按钮
+  tapToToggleControls: true,
+  clickToCloseNonZoomable: true,
+  indexIndicatorSep: ' / '
+}
+Vue.use(preview, options)
+
 
 new Vue({
   render: h => h(App),
   router,
-  beforeCreate(){
+  beforeCreate() {
     Vue.prototype.$bus = this
   }
 }).$mount('#app')

@@ -8,8 +8,21 @@ const fs = require('fs');
 const webp = require('webp-converter');
 
 router.get('/', async (ctx, next) => {
-    const user = await pool.query('SELECT id,email,username FROM users');
+    const key = ctx.query.key || ''
+    if (!key.trim()) {
+        ctx.body = { ok: 1, data: [] };
+    }
+    const user = await pool.query('SELECT id,email,username,avatar FROM users WHERE email like ? or username like ?', [`%${key}%`, `%${key}%`]);
     ctx.body = { ok: 1, data: user[0] };
+})
+
+router.get('/:id', async (ctx, next) => {
+    const key = ctx.params.id
+    const user = await pool.query('SELECT id,email,username,avatar FROM users WHERE id=?', [key]);
+    if (user[0].length)
+        ctx.body = { ok: 1, data: user[0][0] };
+    else
+        ctx.body = { ok: 0, data: "查无此人!" }
 })
 
 router.post('/', upload.single('avatar'), async (ctx, next) => {
@@ -23,12 +36,12 @@ router.post('/', upload.single('avatar'), async (ctx, next) => {
         ctx.body = { ok: 0, msg: '两次密码不一致' };
         return;
     }
-    const userEmail = await pool.query('SELECT * FROM users WHERE email=?', [email]);
+    const userEmail = await pool.query('SELECT id FROM users WHERE email=?', [email]);
     if (userEmail[0].length !== 0) {
         ctx.body = { ok: 0, msg: '邮箱已被注册' };
         return;
     }
-    const userUsername = await pool.query('SELECT * FROM users WHERE username=?', [username]);
+    const userUsername = await pool.query('SELECT id FROM users WHERE username=?', [username]);
     if (userUsername[0].length !== 0) {
         ctx.body = { ok: 0, msg: '用户名重复！' };
         return;

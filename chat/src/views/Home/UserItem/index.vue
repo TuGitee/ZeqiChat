@@ -3,7 +3,7 @@
         <div class="user-title">
             <div class="user-title-avatar">
                 <i class="user-title-avatar-online" :style="{ backgroundColor: user.online ? '#43da83' : '#ff5e5e' }"></i>
-                <img :src="`http://47.120.2.219:3000${user.avatar}`" alt="404 Not Found..." class="user-title-avatar-img"
+                <img :src="`https://zeqichat.xyz${user.avatar}`" alt="404 Not Found..." class="user-title-avatar-img"
                     :style="{ filter: user.online ? 'grayscale(0)' : 'grayscale(1)' }">
                 <i class="user-title-avatar-count" v-if="user.id == userId || user.unread">{{ user.id == userId ? "me" :
                     user.unread
@@ -12,14 +12,13 @@
 
             <div class="user-title-content">
                 <p class="user-title-content-header">
-
-                    <span class="user-title-username" v-html="formatMessage(removeSlash(user.username))"></span>
+                    <span class="user-title-username" v-html="filterMessage(formatMessage(user.username))"></span>
                     <span class="user-title-time">{{ formatTime(user.last.create_time).slice(0, -3) }}</span>
                 </p>
                 <p class="user-title-message">
                     <span class="user-title-name" v-if="user.last.username"
-                        v-html="formatMessage(removeSlash(user.last.username))"></span>
-                    <span v-text="user.last.message"></span>
+                        v-html="filterMessage(formatMessage(user.last.username))"></span>
+                    <span v-text="filterMessage(user.last.message)" class="user-title-msg"></span>
                 </p>
             </div>
         </div>
@@ -27,7 +26,7 @@
 </template>
 
 <script>
-import { removeSlash, formatMessage } from "@/utils/message";
+import { filterMessage, formatMessage } from "@/utils/message";
 import formatTime from '@/utils/formatTime.js'
 export default {
     name: 'UserItem',
@@ -45,7 +44,7 @@ export default {
         }
     },
     methods: {
-        removeSlash,
+        filterMessage,
         formatMessage,
         formatTime,
         changeUser() {
@@ -58,7 +57,7 @@ export default {
 <style lang="less" scoped>
 .active {
     background-color: #f6f6f688;
-    box-shadow: 0 0 10px #ff282888;
+    box-shadow: 0 0 10px #f6f6f688;
 }
 
 .user {

@@ -11,11 +11,13 @@ const UserApi = require('./UserApi');
 const FriendApi = require('./FriendApi');
 const ChatApi = require('./ChatApi');
 const LoginApi = require('./LoginApi');
+const BlogApi = require('./BlogApi');
 
 router.use("/user", UserApi.routes(), UserApi.allowedMethods());
 router.use("/friend", FriendApi.routes(), FriendApi.allowedMethods());
 router.use("/login", LoginApi.routes(), LoginApi.allowedMethods());
 router.use("/chat", ChatApi.routes(), ChatApi.allowedMethods());
+router.use("/blog", BlogApi.routes(), BlogApi.allowedMethods());
 
 router.post('/captcha', async (ctx, next) => {
     const { email } = ctx.request.body;

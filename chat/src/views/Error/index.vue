@@ -1,12 +1,18 @@
 <template>
-    <h1>{{ msg }}</h1>
+    <el-empty :description="msg"></el-empty>
 </template>
 
 <script>
+import { Empty } from 'element-ui';
 export default {
     name: 'Error',
     computed: {
-        msg: () => `Can't find the page ${this.router.currentRoute.path} you are looking for!`
+        msg() {
+            return `Can't find the page ${this.$route.fullPath} you are looking for!`
+        }
+    },
+    components: {
+        [Empty.name]: Empty
     }
 }
 </script>
