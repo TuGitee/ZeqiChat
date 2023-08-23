@@ -217,8 +217,6 @@ export default {
     .upload-header {
         width: 100%;
         padding: .5rem 1rem;
-        padding-top: calc(constant(safe-area-inset-top) + 0.5rem);
-        padding-top: calc(env(safe-area-inset-top) + 0.5rem);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -270,8 +268,7 @@ export default {
         width: 100%;
         overflow-y: scroll;
         overflow-x: hidden;
-        top: calc(constant(safe-area-inset-top) + 3rem);
-        top: calc(env(safe-area-inset-top) + 3rem);
+        top: 3rem;
         padding: 0 1.2rem;
 
         /deep/ .el-textarea {

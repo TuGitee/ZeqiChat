@@ -54,7 +54,13 @@
                     <i class="el-icon-chat-round"></i>
                     <span>{{ 0 }}</span>
                 </div> -->
-                <img class="blog-item-footer-avatar" :src="`https://zeqichat.xyz${avatar}`" alt="">
+                <router-link :to="{
+                    name: 'blog',
+                    params: {
+                        id: userId
+                    }
+                }">
+                    <img class="blog-item-footer-avatar" :src="`https://zeqichat.xyz${avatar}`" alt=""></router-link>
                 <form action="#" class="blog-item-footer-form" @submit.prevent="commentBlog">
                     <input type="text" class="blog-item-footer-form-input" placeholder="说点什么..." v-model="comment"
                         :disabled="isRequest">
@@ -96,7 +102,8 @@
                         </div>
                     </li>
 
-                    <li class="blog-comment-list-item" v-else>
+                    <li class="blog-comment-list-item"
+                        v-if="last >= blog.commentList.length && blog.commentList.length > 1">
                         <div class="blog-comment-list-item-more" @click="last = 1">
                             <span>收起评论</span>
                             <i class="el-icon-arrow-up"></i>
@@ -146,6 +153,9 @@ export default {
         },
         avatar() {
             return localStorage.getItem('avatar')
+        },
+        userId() {
+            return localStorage.getItem('user')
         }
     },
     methods: {
@@ -195,11 +205,15 @@ export default {
         }
     },
     mounted() {
-        this.adjustHeight()
-        const resizeObserver = new ResizeObserver(entries => {
+        if (window.innerWidth > 600) {
             this.adjustHeight()
-        })
-        resizeObserver.observe(this.$refs.blogItem)
+            const resizeObserver = new ResizeObserver(entries => {
+                this.adjustHeight()
+            })
+            resizeObserver.observe(this.$refs.blogItem)
+        }else {
+            this.height = 'unset'
+        }
     }
 }
 </script>

@@ -50,8 +50,9 @@
                 </el-input>
               </el-form-item></el-col>
             <el-col :span="12"><el-form-item prop="avatar" label="头像">
-                <el-upload class="avatar-uploader" action="#" :on-change="handleAvatarChange" :on-exceed="handleAvatarExceed" :limit="1" accept="image/*"
-                  name="image" :auto-upload="false" ref="upload">
+                <el-upload class="avatar-uploader" action="#" :on-change="handleAvatarChange"
+                  :on-exceed="handleAvatarExceed" :limit="1" accept="image/*" name="image" :auto-upload="false"
+                  ref="upload">
                   <el-button size="small" type="primary">点击上传</el-button>
                   <div slot="tip" class="el-upload__tip" style="line-height: 1;">只能上传图片文件，且不超过2M</div>
                 </el-upload>
@@ -346,7 +347,7 @@ input {
             border-radius: 50%;
             background-color: white;
             margin: 0 0.1rem;
-            transition: none;
+            transition: none !important;
             transform: rotate(-90deg);
 
             &:before {

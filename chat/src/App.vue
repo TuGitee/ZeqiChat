@@ -28,10 +28,6 @@ export default {
   color: #2c3e50;
   font-size: 1rem;
 
-  li {
-    list-style: none;
-  }
-
   a {
     text-decoration: none;
   }
@@ -72,10 +68,16 @@ export default {
 }
 
 .el-message-box {
+
+  @media screen and (max-width: 600px) {
+    width: 90%;
+  }
+
   .el-message-box__title {
     font-weight: 700;
     font-size: 20px;
   }
+
   .el-message-box__message {
     @import url("./less/md_0.less");
   }

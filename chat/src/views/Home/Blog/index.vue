@@ -59,7 +59,7 @@ export default {
             if (this.isRequest) return
             if (this.blogEnd) return
             this.isRequest = true
-            this.$axios.get(`/api/blog?pageNo=${this.pageNo}&pageDelta=${this.pageDelta}&pageSize=${this.pageSize}${this.id === 2023 ? '' : `&userId=${this.id}`}`, {
+            this.$axios.get(`/api/blog?pageNo=${this.pageNo}&pageDelta=${this.pageDelta}&pageSize=${this.pageSize}${this.id == 2023 ? '' : `&userId=${this.id}`}`, {
                 signal: this.controller.signal
             }).then(res => {
                 if (!res.data.ok) {
@@ -99,13 +99,14 @@ export default {
             this.isRequest = false
             this.blogEnd = false
             this.getRequestBlog()
-            let res = await this.$axios.get(`/api/user/${this.id}`, {
+            this.$axios.get(`/api/user/${this.id}`, {
                 signal: this.controller.signal
+            }).then(res => {
+                this.userInfo = res.data.ok ? res.data.data : {
+                    avatar: "/images/world.jpg",
+                    username: "推荐"
+                }
             })
-            this.userInfo = res.data.ok ? res.data.data : {
-                avatar: "/images/world.jpg",
-                username: "推荐"
-            }
         }
     },
     computed: {

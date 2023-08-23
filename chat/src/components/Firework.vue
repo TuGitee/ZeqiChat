@@ -113,7 +113,7 @@ export default {
 
 <style scoped lang="less">
 .root {
-    opacity: 0.3;
+    opacity: 0.8;
     position: absolute;
     inset: 0;
     z-index: 999;
@@ -128,7 +128,8 @@ export default {
     font-size: 10vmin;
     letter-spacing: .5rem;
     font-weight: bold;
-    filter: drop-shadow(0px 0px 5px #000);
+    color: white;
+    filter: brightness(2);
     pointer-events: none;
 }
 </style>

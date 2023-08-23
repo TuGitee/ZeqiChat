@@ -2,7 +2,8 @@
     <li class="user" @click="changeUser" :class="{ active: user.id == to }">
         <div class="user-title">
             <div class="user-title-avatar">
-                <i class="user-title-avatar-online" :style="{ backgroundColor: user.online ? '#43da83' : '#ff5e5e' }"></i>
+                <i class="user-title-avatar-online"
+                    :style="{ backgroundColor: user.online ? '#43da83' : user.id == userId ? '#43da83' : '#ff5e5e' }"></i>
                 <img :src="`https://zeqichat.xyz${user.avatar}`" alt="404 Not Found..." class="user-title-avatar-img"
                     :style="{ filter: user.online ? 'grayscale(0)' : 'grayscale(1)' }">
                 <i class="user-title-avatar-count" v-if="user.id == userId || user.unread">{{ user.id == userId ? "me" :

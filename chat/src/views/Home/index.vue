@@ -78,7 +78,12 @@ export default {
       isDrag: false,
       to: 2023,
       WorldID: 2023,
-      server: io(`wss://zeqichat.xyz?token=${localStorage.getItem("token")}`),
+      server: io(`wss://zeqichat.xyz?token=${localStorage.getItem("token")}`, {
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnection: true,
+        reconnectionAttempts: Infinity
+      }),
       onlineList: [],
       mobileShow: false,
       unread_msg: 0,
@@ -91,7 +96,7 @@ export default {
       sendList: [],
       isAdd: false,
       isCheckRequest: false,
-      color: '#ff0000',
+      color: localStorage.getItem("color") || '#ff0000',
       netInfo: {
         effectiveType: '',
         rtt: 0,
@@ -142,6 +147,7 @@ export default {
     debounceFun,
     changeColor(color) {
       this.color = color
+      localStorage.setItem("color", color)
     },
     checkRequest() {
       this.isCheckRequest = !this.isCheckRequest
@@ -276,6 +282,9 @@ export default {
       this.friendList.unshift(cur[0])
     },
     async init() {
+      await this.getFriend()
+      this.getRequestFriend()
+
       let net = navigator.connection
       net.addEventListener('change', (e) => {
         this.netInfo.effectiveType = e.target.effectiveType
@@ -284,13 +293,11 @@ export default {
       this.netInfo.effectiveType = net.effectiveType
       this.netInfo.rtt = net.rtt
 
-      this.server.emit(WebSocketType.GroupList);
-      await this.getFriend()
-      await this.getRequestFriend()
-
       window.addEventListener('resize', this.getMobile)
 
       this.to = localStorage.getItem("to") ?? this.WorldID;
+
+      this.server.emit(WebSocketType.GroupList);
 
       if (!this.isMobile) {
         if (this.$route.name === 'home') {
@@ -312,6 +319,8 @@ export default {
     }
   },
   mounted() {
+    this.init();
+
     this.server.on(WebSocketType.GroupList, (data) => {
       let res = data.data;
       res = res.filter((item) => item.to == this.userId || item.id == this.WorldID);
@@ -323,8 +332,6 @@ export default {
       }, []);
       this.onlineList = res;
     });
-
-    this.init();
 
     this.$bus.$on('changeInfo', () => {
       this.isChangeAvatar = true
@@ -376,7 +383,7 @@ export default {
           return 0
         }
       })
-    }
+    },
   }
 };
 </script>
@@ -430,14 +437,17 @@ export default {
     radial-gradient(at 0% 50%, hsla(355, 100%, 93%, 1) 0px, transparent 50%),
     radial-gradient(at 60% 40%, hsla(340, 100%, 76%, 1) 0px, transparent 50%),
     radial-gradient(at 0% 100%, hsla(22, 100%, 77%, 1) 0px, transparent 50%),
-    radial-gradient(at 0% 0%, hsla(343, 100%, 76%, 1) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, hsla(343, 100%, 76%, 1) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsla(12, 100%, 90%, 1) 0px, transparent 50%),
+    radial-gradient(at 20% 60%, hsla(33, 100%, 76%, 1) 0px, transparent 50%),
+    radial-gradient(at 90% 90%, hsla(320, 100%, 76%, 1) 0px, transparent 50%);
   border-radius: 15px;
   min-width: 400px;
   min-height: 300px;
   resize: both;
   max-height: 100vh;
   max-width: 100vw;
-  transition: none;
+  transition: none !important;
   overflow: hidden;
 
   .color {

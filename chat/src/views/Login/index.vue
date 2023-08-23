@@ -169,7 +169,7 @@ export default {
       return {
         email: [
           { required: true, message: '请输入邮箱', trigger: 'change' },
-          { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
+          { type: this.isPassword ? 'string' : 'email', message: this.isPassword ? '请输入正确的邮箱/用户名' : '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
         ],
         password: [
           { required: this.isPassword, message: '请输入密码', trigger: 'blur' }
@@ -284,7 +284,7 @@ export default {
           border-radius: 50%;
           background-color: white;
           margin: 0 0.1rem;
-          transition: none;
+          transition: none !important;
           transform: rotate(-90deg);
 
           &:before {

@@ -773,7 +773,7 @@ export default {
     text-align: center;
     perspective: 0;
     scroll-behavior: smooth;
-    transition: none;
+    transition: none !important;
     overflow: hidden;
     perspective: 500px;
     z-index: 999;
@@ -858,7 +858,7 @@ export default {
     list-style: none;
     position: relative;
     margin: 0;
-    transition: none;
+    transition: none !important;
 }
 
 .home-content .home-content-content .home-content-content-item__end {
@@ -890,7 +890,7 @@ export default {
     align-items: center;
     justify-content: center;
     max-height: 400px;
-    transition: none;
+    transition: none !important;
     padding: 0 10px;
     box-sizing: content-box;
     gap: 10px;

@@ -15,12 +15,14 @@
             </router-link>
         </ul>
         <ul class="tool list">
-            <li class="item">
-                <p class="icon"><a href="https://github.com/TuGitee/chatwith" target="_blank"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAA1JJREFUWEe1VztrFFEYHd8WvuXefWYX42pgCy0W64ggYmMhpBEFtdDGTrERTNwfIEYNqezFP6CdChYxIJoUQhBEDcRCo24eEDE6nnPzzTo78+1msrseOOzM9zjfnfteLynK5fLmjDEnUtaOpI15mjJmCs/zjnh2NvgYw1hJ6xxFY9IoMArWQD8hGTvKXJFZO0ql0haIVPFlCyHhNVFyq9QS2WRgy5E8FhVsl9RK3Bs5aw8haToq0gVOU1vK6JDx/h/FA0437QmOk9Ltb2F7iN+vEXsSfkfuI/y+CttZQ50TcFbDgWTG2kv09ff3b0ylUhexzD4738rSmwSfg8/ACfAHyLxZ8EqwFFHwtNjDrNJXh0y62GxPp9NHJMShbMw22MqDg4PrxVSH7/vrstnswUKhsFtMDmj4vpguajUMBYxc5w1BZCaTqUhI24BGQdMGR10Auwov6iaDlp5zQR0APXZS0wZrbpjc9qoEsJuQXBSdtoFh2Qu9L1F9krU97t+aE7wuGh0DWhci2itEbc5SHiwxZy6XOyD5HaNYLO7SarA2WzelOBY4qyW/K4Dux2gdcIpDwDXd4EAD3kte1wDd8Wgd1qZjMeYwZk7yugZ+lFJnsVnX+NhArOR2DMyBrdBcitUw5gNb9lJx+Glrz0p+x2ix1MfYgGHNCY53ayJirB8r+mzAcLPDIgi4JhptAzrno7oBWdvr6+vbjpe5qFP4B6xWKpVNopcYPLD4AchfDumFOcfDzQVjvO+HHLdxDJ/BL4/YwPYJHIL9eD6f3+OSFPT29u7E5D0GvRvo9neh/BgRc0/SPC9vTAnGn+L8xkJsHUReBwl1WvtCO44JfLG6qypc6jFmv6StAMZboYAatuI8t2M8NxwkWWtPSUoM+Pqj4dgWHJKUf5BreL3b8TUPaHeXFWuvwnaHN6RWV2wOT5DfghNNNXB09iBgRgKXeZaLKzGQ90vyNc6whoTqyBlzmIGSsIwxf8LZjF64DN4cGBjYIKEqXE68MDlDbQlrDY4/Cr9RRPzV/vch5nc0B5zk1UxCkkHmxBDYsIdzX5cQFYjh3hHEc2VVV8tpCS4XdP1dCNXQK/O8ootLBeJmGQeOdPNS467k0Su3Bg4fem+HvK4Cz/sL2ARSo/g/MBkAAAAASUVORK5CYII=" alt=""></a></p>
+            <li class="item github">
+                <p class="icon"><a href="https://github.com/TuGitee/chatwith" target="_blank"><img
+                            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAA1JJREFUWEe1VztrFFEYHd8WvuXefWYX42pgCy0W64ggYmMhpBEFtdDGTrERTNwfIEYNqezFP6CdChYxIJoUQhBEDcRCo24eEDE6nnPzzTo78+1msrseOOzM9zjfnfteLynK5fLmjDEnUtaOpI15mjJmCs/zjnh2NvgYw1hJ6xxFY9IoMArWQD8hGTvKXJFZO0ql0haIVPFlCyHhNVFyq9QS2WRgy5E8FhVsl9RK3Bs5aw8haToq0gVOU1vK6JDx/h/FA0437QmOk9Ltb2F7iN+vEXsSfkfuI/y+CttZQ50TcFbDgWTG2kv09ff3b0ylUhexzD4738rSmwSfg8/ACfAHyLxZ8EqwFFHwtNjDrNJXh0y62GxPp9NHJMShbMw22MqDg4PrxVSH7/vrstnswUKhsFtMDmj4vpguajUMBYxc5w1BZCaTqUhI24BGQdMGR10Auwov6iaDlp5zQR0APXZS0wZrbpjc9qoEsJuQXBSdtoFh2Qu9L1F9krU97t+aE7wuGh0DWhci2itEbc5SHiwxZy6XOyD5HaNYLO7SarA2WzelOBY4qyW/K4Dux2gdcIpDwDXd4EAD3kte1wDd8Wgd1qZjMeYwZk7yugZ+lFJnsVnX+NhArOR2DMyBrdBcitUw5gNb9lJx+Glrz0p+x2ix1MfYgGHNCY53ayJirB8r+mzAcLPDIgi4JhptAzrno7oBWdvr6+vbjpe5qFP4B6xWKpVNopcYPLD4AchfDumFOcfDzQVjvO+HHLdxDJ/BL4/YwPYJHIL9eD6f3+OSFPT29u7E5D0GvRvo9neh/BgRc0/SPC9vTAnGn+L8xkJsHUReBwl1WvtCO44JfLG6qypc6jFmv6StAMZboYAatuI8t2M8NxwkWWtPSUoM+Pqj4dgWHJKUf5BreL3b8TUPaHeXFWuvwnaHN6RWV2wOT5DfghNNNXB09iBgRgKXeZaLKzGQ90vyNc6whoTqyBlzmIGSsIwxf8LZjF64DN4cGBjYIKEqXE68MDlDbQlrDY4/Cr9RRPzV/vch5nc0B5zk1UxCkkHmxBDYsIdzX5cQFYjh3hHEc2VVV8tpCS4XdP1dCNXQK/O8ootLBeJmGQeOdPNS467k0Su3Bg4fem+HvK4Cz/sL2ARSo/g/MBkAAAAASUVORK5CYII="
+                            alt=""></a></p>
                 <p class="text"><a href="https://github.com/TuGitee/chatwith" target="_blank">GitHub</a></p>
             </li>
             <li class="item" @click="notice">
-                <p class="icon"><i class="el-icon-message-solid"></i></p>
+                <p class="icon"><i :class="`el-icon-message${isMobile ? '' : '-solid'}`"></i></p>
                 <p class="text">公告</p>
             </li>
         </ul>
@@ -127,7 +129,7 @@ export default {
             .icon {
                 text-align: center;
                 font-size: 22px;
-                transition: none;
+                transition: none !important;
             }
 
             .text {
@@ -157,6 +159,44 @@ export default {
 
             &:hover {
                 color: #C32F01;
+            }
+        }
+    }
+
+    @media screen and (max-width: 600px) {
+        flex-direction: row;
+
+        .list {
+            justify-content: space-around !important;
+        }
+
+        .tool {
+            padding-bottom: 0;
+
+            .item {
+                color: black;
+                display: block;
+                height: 100%;
+
+                .icon {
+                    height: auto;
+                    width: auto;
+                }
+
+                &.github {
+                    display: flex;
+
+                    .icon {
+                        height: 22px;
+                        width: 22px;
+
+                        img {
+                            padding-top: 5px;
+                        }
+                    }
+
+                }
+
             }
         }
     }

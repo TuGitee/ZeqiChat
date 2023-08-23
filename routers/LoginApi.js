@@ -24,13 +24,13 @@ router.post('/', async (ctx, next) => {
     let user;
 
     if (password)
-        user = await pool.query('SELECT id,username,email,avatar FROM users WHERE email=? AND password=? OR username=? AND password=?', [email, password, email, password]);
+        user = await pool.query('SELECT id,username,email,avatar,online FROM users WHERE email=? AND password=? OR username=? AND password=?', [email, password, email, password]);
     else {
         if (ctx.session.captcha?.captcha != captcha || ctx.session.captcha?.email != email) {
             ctx.body = { ok: 0, msg: '验证码错误' };
             return;
         }
-        user = await pool.query('SELECT id,username,email,avatar FROM users WHERE email=?', [email]);
+        user = await pool.query('SELECT id,username,email,avatar,online FROM users WHERE email=?', [email]);
     }
     if (user[0].length === 0) {
         ctx.body = { ok: 0, msg: '用户名、邮箱或密码错误' };

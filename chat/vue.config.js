@@ -12,6 +12,8 @@ module.exports = defineConfig({
     proxy: {
 
     },
+    host: '0.0.0.0',
+    port: 8080
   },
   configureWebpack: config=>{
     config.plugins.push(new CompressionPlugin({
