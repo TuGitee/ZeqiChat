@@ -1,8 +1,10 @@
 const mysql2 = require('mysql2/promise');
 const pool = mysql2.createPool({
-    host: 'localhost',
+    // host: 'localhost',
     user: 'root',
-    password: '123',
+    // password: '123',
+    host: '47.120.2.219',
+    password: '8Ke8bneL6HSaHfm3',
     database: 'chatdb',
     connectionLimit: 10,
     waitForConnections: true

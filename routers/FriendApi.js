@@ -13,7 +13,7 @@ router.get('/', async (ctx, next) => {
 
     const data = []
 
-    let world = await pool.query('select w.create_time,u.username,w.message from world w inner join users u on w.from_id=u.id order by w.world_msg_id desc limit 1')
+    let world = await pool.query('SELECT w.create_time, u.username, CASE WHEN w.recall = 0 THEN w.message ELSE NULL END AS message,w.recall FROM world w INNER JOIN users u ON w.from_id = u.id ORDER BY w.world_msg_id DESC limit 1')
     world = world[0]
     data.push({
         id: WORLD_ID,
@@ -21,10 +21,10 @@ router.get('/', async (ctx, next) => {
         avatar: "/images/world.jpg",
         username: "World",
         last: world[0],
-        online: 1
+        online: 1,
     })
     for (let user of userList) {
-        let last = await pool.query('select * from private where from_id=? and to_id=? or to_id=? and from_id=?', [user_id, user.id, user_id, user.id])
+        let last = await pool.query('select private_msg_id,create_time,from_id,to_id,to_read,recall,CASE WHEN recall = 0 THEN message ELSE NULL END AS message from private where from_id=? and to_id=? or to_id=? and from_id=? ORDER BY private_msg_id DESC limit 1', [user_id, user.id, user_id, user.id])
         last = last[0]
         if (user.id === user_id) {
             data.push({
@@ -33,13 +33,13 @@ router.get('/', async (ctx, next) => {
                 email: user.email,
                 id: user.id,
                 unread: 0,
-                last: last[last.length - 1] ?? '',
+                last: last[0] ?? '',
                 online: user.online
             })
         }
 
         else {
-            let res = await pool.query('select * from private where from_id=? and to_id=? and to_read=0', [user.id, user_id])
+            let res = await pool.query('select private_msg_id,create_time,from_id,to_id,to_read,recall,CASE WHEN recall = 0 THEN message ELSE NULL END AS message from private where from_id=? and to_id=? and to_read=0 ORDER BY private_msg_id DESC limit 1', [user.id, user_id])
             let msg = res[0]
             data.push({
                 avatar: user.avatar,

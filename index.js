@@ -13,11 +13,13 @@ const fs = require('fs')
 const https = require('https')
 // const sslify = require('koa-sslify').default
 
-const options = {
- key: fs.readFileSync('./config/zeqichat.xyz.key'),
- cert: fs.readFileSync('./config/zeqichat.xyz.pem'),
-}
-const server = https.createServer(options, app.callback());
+// const options = {
+//  key: fs.readFileSync('./config/zeqichat.xyz.key'),
+//  cert: fs.readFileSync('./config/zeqichat.xyz.pem'),
+// }
+// const server = https.createServer(options, app.callback());
+
+const server = https.createServer({}, app.callback());
 
 // app.use(sslify())
 
@@ -28,6 +30,14 @@ app.use(cors({
 
 
 app.use(bodyparser());
+
+app.use(async (ctx, next) => {
+    if (ctx.url.includes("/uploads/") || ctx.url.includes("/images/")) {
+        ctx.set('Cache-Control', 'max-age=3179200')
+    }
+    await next()
+})
+
 app.use(m_static(path.join(__dirname, 'public')));
 
 app.use(session({
@@ -39,7 +49,7 @@ app.use(session({
 
 
 app.use(async (ctx, next) => {
-    if (ctx.url.includes("login")) {
+    if (ctx.url.includes("login")||ctx.url.includes("register")||ctx.url.includes("captcha")||ctx.url.includes("user") && ctx.method === "POST") {
         await next()
         return;
     }

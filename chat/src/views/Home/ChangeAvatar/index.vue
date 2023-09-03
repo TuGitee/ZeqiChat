@@ -48,6 +48,7 @@
 </template>
 
 <script>
+import { mapState } from "vuex";
 export default {
     name: 'ChangeAvatar',
     data() {
@@ -58,15 +59,13 @@ export default {
         }
     },
     computed: {
-        avatar() {
-            return localStorage.getItem("avatar")
-        },
         url() {
             return URL.createObjectURL(this.file)
         },
-        preName() {
-            return localStorage.getItem("username")
-        }
+        ...mapState({
+            avatar: state => state.user.avatar,
+            preName: state => state.user.username
+        })
     },
     methods: {
         uploadPhoto(e) {
@@ -84,6 +83,7 @@ export default {
                 this.$notify.error({
                     title: '出错',
                     message: "用户名不能为空",
+                    offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 });
                 return;
             }
@@ -99,23 +99,23 @@ export default {
                 },
             });
             if (res.data.ok) {
-                localStorage.setItem("username", res.data.username);
-                localStorage.setItem("avatar", res.data.avatar);
-                localStorage.setItem("token", res.data.newToken);
-                location.reload()
+                // localStorage.setItem("username", res.data.username);
+                // localStorage.setItem("avatar", res.data.avatar);
+                // localStorage.setItem("token", res.data.newToken);
+                this.$store.commit("SET_USERNAME", res.data.username);
+                this.$store.commit("SET_AVATAR", res.data.avatar);
+                this.$store.commit("SET_TOKEN", res.data.newToken);
             } else {
                 this.$notify.error({
                     title: '出错',
                     message: res.data.msg,
+                    offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 });
             }
             this.loading = false
             this.$emit("cancel")
         }
     },
-    mounted() {
-        this.username = localStorage.getItem("username")
-    }
 }
 </script>
 

@@ -1,5 +1,5 @@
 <template>
-    <li class="user" @click="changeUser" :class="{ active: user.id == to }">
+    <li class="user" @click="changeUser" :class="{ active: user.id == to }" @contextmenu.prevent.stop="handleContextMenu">
         <div class="user-title">
             <div class="user-title-avatar">
                 <i class="user-title-avatar-online"
@@ -17,9 +17,11 @@
                     <span class="user-title-time">{{ formatTime(user.last.create_time).slice(0, -3) }}</span>
                 </p>
                 <p class="user-title-message">
-                    <span class="user-title-name" v-if="user.last.username"
+                    <span class="user-title-name" v-if="user.last.username && user.id == WORLD_ID"
                         v-html="filterMessage(formatMessage(user.last.username))"></span>
-                    <span v-text="filterMessage(user.last.message)" class="user-title-msg"></span>
+                    <span v-if="user.last.username && user.id == WORLD_ID"> &nbsp;·&nbsp;</span>
+                    <span class="user-title-msg">{{ user.last.recall ? "该消息已被撤回" : filterMessage(user.last.message)
+                    }}</span>
                 </p>
             </div>
         </div>
@@ -29,19 +31,26 @@
 <script>
 import { filterMessage, formatMessage } from "@/utils/message";
 import formatTime from '@/utils/formatTime.js'
+import { mapState } from "vuex";
+import { WORLD_ID } from "@/ws";
 export default {
     name: 'UserItem',
     props: {
         user: {
             type: Object,
-        },
-        to: {
-            type: String | Number,
+        }
+    },
+    data() {
+        return {
+            WORLD_ID
         }
     },
     computed: {
-        userId() {
-            return localStorage.getItem("user");
+        ...mapState({
+            userId: state => state.user.userId
+        }),
+        to() {
+            return this.$route.params.id
         }
     },
     methods: {
@@ -50,6 +59,29 @@ export default {
         formatTime,
         changeUser() {
             this.$emit('changeUser', this.user.id, this.user.username, this.user.avatar)
+        },
+        handleContextMenu(e) {
+            this.$store.commit('SET_STATE', {
+                x: e.clientX,
+                y: e.clientY,
+                menuList: [{
+                    label: '刷新页面',
+                    command: 'refresh',
+                    icon: 'el-icon-refresh'
+                }, {
+                    label: '私聊',
+                    command: 'chat',
+                    id: this.user.id,
+                    icon: 'el-icon-chat-line-round'
+                },
+                {
+                    label: '动态',
+                    command: 'blog',
+                    id: this.user.id,
+                    icon: 'el-icon-document'
+                }],
+                isShow: true
+            })
         }
     }
 }
@@ -73,6 +105,7 @@ export default {
     margin: 0;
     border-radius: 10px;
     position: relative;
+    user-select: none;
 
     &:not(:last-child) {
         &::after {
@@ -125,14 +158,21 @@ export default {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: flex;
+            flex-wrap: nowrap;
+
+            /deep/ p {
+                text-overflow: ellipsis;
+                overflow: hidden;
+            }
 
             .user-title-name {
                 font-weight: bold;
+            }
 
-                &::after {
-                    content: "·";
-                    margin: 0 5px;
-                }
+            .user-title-msg {
+                text-overflow: ellipsis;
+                overflow: hidden;
             }
         }
 
@@ -186,6 +226,11 @@ export default {
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
+
+            /deep/ p {
+                text-overflow: ellipsis;
+                overflow: hidden;
+            }
         }
     }
 

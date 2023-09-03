@@ -3,13 +3,13 @@
         <div class="blog-item" ref="blogItem">
             <div class="blog-item-header">
                 <div class="blog-item-header-content">
-                    <div class="blog-item-header-avatar">
+                    <div class="blog-item-header-avatar" @contextmenu.prevent.stop="handleContextMenu">
                         <router-link :to="{
                             name: 'blog',
                             params: {
                                 id: blog.id
                             }
-                        }">
+                        }" replace>
                             <img :src="`https://zeqichat.xyz${blog.avatar}`" alt="">
                         </router-link>
                     </div>
@@ -19,7 +19,7 @@
                             params: {
                                 id: blog.id
                             }
-                        }">
+                        }" replace>
                             <div class="blog-item-header-info-name">
                                 {{ blog.username }}
                             </div>
@@ -39,7 +39,7 @@
             <div class="blog-item-content">
                 <div class="blog-item-content-text" v-html="filterMessage(formatMessage(blog.content))">
                 </div>
-                <ul class="blog-item-content-img">
+                <ul class="blog-item-content-img" v-if="imageList.length">
                     <li class="blog-item-content-img-item" v-for="(  image, index  ) in   imageList  " :key="index">
                         <img :src="image" :preview="blog.blog_id" />
                     </li>
@@ -59,7 +59,7 @@
                     params: {
                         id: userId
                     }
-                }">
+                }" replace>
                     <img class="blog-item-footer-avatar" :src="`https://zeqichat.xyz${avatar}`" alt=""></router-link>
                 <form action="#" class="blog-item-footer-form" @submit.prevent="commentBlog">
                     <input type="text" class="blog-item-footer-form-input" placeholder="说点什么..." v-model="comment"
@@ -81,7 +81,7 @@
                             params: {
                                 id: comment.id
                             }
-                        }">
+                        }" replace>
                             <div class="blog-comment-list-item-avatar">
                                 <img :src="`https://zeqichat.xyz${comment.avatar}`" alt="">
                             </div>
@@ -120,6 +120,7 @@
 import formatTime from "@/utils/formatTime.js"
 import { filterMessage, formatMessage } from "@/utils/message";
 import DrawerTransition from '@/components/DrawerTransition'
+import { mapState } from "vuex";
 
 export default {
     name: 'BlogItem',
@@ -145,18 +146,12 @@ export default {
         imageList() {
             return JSON.parse(this.blog.images).map(item => `https://zeqichat.xyz${item}`)
         },
-        token() {
-            return localStorage.getItem('token')
-        },
-        username() {
-            return localStorage.getItem('username')
-        },
-        avatar() {
-            return localStorage.getItem('avatar')
-        },
-        userId() {
-            return localStorage.getItem('user')
-        }
+        ...mapState({
+            token: state => state.user.token,
+            avatar: state => state.user.avatar,
+            username: state => state.user.username,
+            userId: state => state.user.userId
+        })
     },
     methods: {
         formatTime,
@@ -189,7 +184,8 @@ export default {
                     if (!res.data.ok) {
                         this.$notify.error({
                             title: '出错',
-                            message: res.data.msg
+                            message: res.data.msg,
+                            offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                         })
                     }
                 })
@@ -202,7 +198,28 @@ export default {
         },
         collapse() {
             this.isCollapse = !this.isCollapse
-        }
+        },
+        handleContextMenu(e) {
+            this.$store.commit('SET_STATE', {
+                x: e.clientX,
+                y: e.clientY,
+                menuList: [
+                    {
+                        label: '私聊',
+                        command: 'chat',
+                        id: this.blog.id,
+                        icon: 'el-icon-chat-line-round'
+                    },
+                    {
+                        label: '动态',
+                        command: 'blog',
+                        id: this.blog.id,
+                        icon: 'el-icon-document'
+                    },
+                ],
+                isShow: true
+            })
+        },
     },
     mounted() {
         if (window.innerWidth > 600) {
@@ -211,7 +228,7 @@ export default {
                 this.adjustHeight()
             })
             resizeObserver.observe(this.$refs.blogItem)
-        }else {
+        } else {
             this.height = 'unset'
         }
     }
@@ -239,6 +256,7 @@ export default {
             display: flex;
             padding: 10px;
             justify-content: space-between;
+            user-select: none;
 
             .blog-item-header-content {
                 display: flex;
@@ -257,6 +275,7 @@ export default {
                 .blog-item-header-info {
                     margin-left: 10px;
                     text-align: left;
+                    flex: 1;
 
                     a {
                         text-decoration: none;
@@ -325,11 +344,13 @@ export default {
             padding: 0 10px 10px;
             max-height: 500px;
             overflow: auto;
+            user-select: text;
 
             .blog-item-content-text {
                 font-size: 1rem;
                 color: #333;
                 text-align: left;
+                user-select: text;
 
                 @import url('~@/less/md.less');
             }
@@ -374,6 +395,7 @@ export default {
                         object-fit: cover;
                         width: 100%;
                         height: 100%;
+                        cursor: zoom-in;
                     }
                 }
 
@@ -489,6 +511,7 @@ export default {
         border-radius: 10px;
         margin-bottom: 10px;
         overflow: hidden;
+        user-select: none;
 
         .blog-comment-title {
             height: 32px;
@@ -576,6 +599,7 @@ export default {
 
             .blog-item-footer-form-button {
                 background-color: #eee;
+                user-select: none;
             }
 
             .blog-item-header-tool-collapse {

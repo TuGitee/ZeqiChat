@@ -4,9 +4,9 @@
             <router-link :to="{
                 name: item.component ? isMobile ? (item.name === 'chat' ? 'home' : item.name) : item.name : '',
                 params: {
-                    id: isMobile ? 2023 : item.name === 'blog' ? 2023 : to
+                    id: isMobile ? WORLD_ID : item.name === 'blog' ? userId : to
                 },
-            }" v-for="item in list" :key="item.name">
+            }" v-for="item in list" :key="item.name" replace>
                 <li class="item"
                     :class="{ active: $route.name === 'home' && item.name === 'chat' ? true : $route.name == item.name, disabled: !item.component }">
                     <p class="icon"><i :class="item.meta.icon"></i></p>
@@ -31,24 +31,25 @@
 
 <script>
 import { filterMessage, formatMessage } from '@/utils/message'
+import { mapState } from 'vuex'
+import { WORLD_ID } from '@/ws'
 export default {
     name: 'SideBar',
     data() {
         return {
+            WORLD_ID
         }
     },
     computed: {
         list() {
             return this.$router.options.routes.find(item => item.name == 'home').children.filter(item => item.meta)
-        }
-    },
-    props: {
-        to: {
-            type: String | Number,
-            default: "2023"
         },
-        isMobile: {
-            type: Boolean,
+        ...mapState({
+            isMobile: state => state.mobile.isMobile,
+            userId: state => state.user.userId
+        }),
+        to(){
+            return this.$route.params.id || WORLD_ID
         }
     },
     methods: {
@@ -72,6 +73,7 @@ export default {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    user-select: none;
 
     .list {
         width: 100%;

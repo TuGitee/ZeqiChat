@@ -11,7 +11,8 @@ const WebSocketType = {
     WorldRead: 7,
     FriendRequest: 8,
     FriendAccept: 9,
-    FriendReject: 10
+    FriendReject: 10,
+    Recall: 11
 }
 
 module.exports = {

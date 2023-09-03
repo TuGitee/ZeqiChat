@@ -27,5 +27,6 @@ export default {
     color: #999;
     line-height: 2;
     padding: 5px 0 20px;
+    user-select: none;
 }
 </style>

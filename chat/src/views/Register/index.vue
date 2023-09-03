@@ -16,7 +16,7 @@
       </div>
       <div class="register-box">
         <h1 class="register-box-title">注册</h1>
-        <el-form label-position="left" label-width="max-content" :model="form" :rules="rules" ref="Form">
+        <el-form label-position="left" label-width="max-content" :model="form" :rules="rules" ref="Form" @keyup.enter.native="register">
           <el-row :gutter="20" width="100%" type="flex" class="row-bg" justify="space-between">
             <el-col :span="14">
               <el-form-item prop="email" label="邮箱">
@@ -45,7 +45,7 @@
           <el-row :gutter="20" width="100%" type="flex" class="row-bg" justify="space-between">
             <el-col :span="12"><el-form-item prop="captcha" label="验证码">
                 <el-input v-model="form.captcha">
-                  <el-button slot="append" @click.prevent="getCaptcha" :disabled="seconds >= 0">{{ seconds >= 0 ?
+                  <el-button slot="append" @click.prevent.stop="getCaptcha" :disabled="seconds >= 0">{{ seconds >= 0 ?
                     `重新发送(${seconds}s)` : "获取验证码" }}</el-button>
                 </el-input>
               </el-form-item></el-col>
@@ -145,6 +145,7 @@ export default {
         this.$notify.warning({
           title: '警告',
           message: "邮箱格式不正确",
+          offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
         })
         this.handleError()
         return
@@ -186,12 +187,14 @@ export default {
                 this.$notify.success({
                   title: '成功',
                   message: "注册成功",
+                  offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 });
                 this.$router.push('/login')
               } else {
                 this.$notify.error({
                   title: '出错',
                   message: res.data.msg,
+                  offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 });
                 this.handleError()
               }
@@ -204,6 +207,7 @@ export default {
           this.$notify.warning({
             title: '警告',
             message: "请填写完整",
+            offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
           });
           this.handleError()
           return;

@@ -16,3 +16,10 @@ export default {
     }
 }
 </script>
+
+<style lang="less" scoped>
+.el-empty {
+    position: absolute;
+    inset: 0;
+}
+</style>

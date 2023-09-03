@@ -1,15 +1,40 @@
 <template>
     <div class="box" @scroll="scroll">
         <div class="info">
-            <div class="info-header">
+            <div class="info-header"
+                :style="{ background: userInfo.background ? `url('https://zeqichat.xyz${userInfo.background}')  no-repeat center/cover` : `url(${require('@/assets/bg.png')}) no-repeat center/cover` }">
                 <div class="info-header-avatar">
-                    <img v-if="userInfo.avatar" :src="`https://zeqichat.xyz${userInfo.avatar}`" alt="">
-                    <span>{{ userInfo.username }}</span>
+                    <img v-if="userInfo.avatar" :src="`https://zeqichat.xyz${userInfo.avatar}`" alt=""
+                        @contextmenu.prevent.stop="handleContextMenu">
+                    <span style="mix-blend-mode: difference; color: white;">{{ userInfo.username }}</span>
                 </div>
-                <div class="info-header-info" v-if="id == userId || id == 2023">
+                <div class="info-header-info" v-if="id == userId || id == WORLD_ID">
                     <router-link to="/home/post">
-                        <button class="info-header-info-post">发表动态</button>
+                        <button class="info-header-info-post"><i class="el-icon-edit"></i>&nbsp;&nbsp;动态</button>
                     </router-link>
+                </div>
+                <div class="info-header-bg" v-if="id == userId">
+                    <button class="info-header-info-bg">
+                        <label for="upload">
+                            <i class="el-icon-picture"></i>
+                        </label>
+                    </button>
+                    <input type="file" id="upload" style="display: none" accept="image/*" @change="fileChange" />
+                </div>
+                <div class="info-header-back" v-else>
+                    <router-link :to="`/home/blog/${this.userId}`">
+                        <button class="info-header-info-back">
+                            <i class="el-icon-s-home"></i>个人主页
+                        </button>
+                    </router-link>
+                </div>
+                <div class="info-header-world" v-if="id == userId">
+                    <button class="info-header-info-world">
+                        <router-link :to="`/home/blog/${WORLD_ID}`">
+                            <i class="el-icon-s-promotion"></i>
+                        </router-link>
+                    </button>
+                    <input type="file" id="upload" style="display: none" accept="image/*" @change="fileChange" />
                 </div>
             </div>
         </div>
@@ -23,8 +48,8 @@
         <div class="zero" v-if="!blogs.length && blogEnd">
             <el-empty description="暂无动态"></el-empty>
             <br />
-            <router-link to="/home/post" v-if="id === userId"><i class="el-icon-thumb"></i>
-                <span>快去发表动态吧</span></router-link>
+            <router-link to="/home/post" v-if="id === userId"><i
+                    class="el-icon-thumb"></i>&nbsp;<span>快去发表动态吧</span></router-link>
         </div>
 
         <div class="end" v-if="blogEnd && blogs.length">
@@ -35,6 +60,8 @@
 
 <script>
 import { Empty, Dialog } from 'element-ui'
+import { mapState } from 'vuex'
+import { WORLD_ID } from '@/ws'
 export default {
     name: "Blog",
     components: {
@@ -52,6 +79,8 @@ export default {
             pageSize: 2,
             userInfo: {},
             controller: null,
+            file: null,
+            WORLD_ID
         }
     },
     methods: {
@@ -59,7 +88,7 @@ export default {
             if (this.isRequest) return
             if (this.blogEnd) return
             this.isRequest = true
-            this.$axios.get(`/api/blog?pageNo=${this.pageNo}&pageDelta=${this.pageDelta}&pageSize=${this.pageSize}${this.id == 2023 ? '' : `&userId=${this.id}`}`, {
+            this.$axios.get(`/api/blog?pageNo=${this.pageNo}&pageDelta=${this.pageDelta}&pageSize=${this.pageSize}${this.id == this.WORLD_ID ? '' : `&userId=${this.id}`}`, {
                 signal: this.controller.signal
             }).then(res => {
                 if (!res.data.ok) {
@@ -92,49 +121,101 @@ export default {
                 this.getRequestBlog()
             }
         },
-        async init() {
+        init() {
+            this.controller?.abort()
+            this.controller = new AbortController()
+
+            this.$axios.get(`/api/user/${this.id}`, {
+                signal: this.controller.signal
+            }).then(res => {
+                this.userInfo = res.data.ok ? res.data.data : {
+                    avatar: "/images/world.jpg",
+                    username: "推荐",
+                    id: this.WORLD_ID
+                }
+            })
+
             this.blogs = []
             this.pageNo = 0
             this.pageDelta = 0
             this.isRequest = false
             this.blogEnd = false
             this.getRequestBlog()
-            this.$axios.get(`/api/user/${this.id}`, {
-                signal: this.controller.signal
+
+            setTimeout(() => {
+                this.getRequestBlog()
+            }, 500)
+        },
+        fileChange(e) {
+            this.file = e.target.files[0]
+            const formData = new FormData()
+            formData.append('image', this.file)
+            this.$axios.post('/api/image', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
             }).then(res => {
-                this.userInfo = res.data.ok ? res.data.data : {
-                    avatar: "/images/world.jpg",
-                    username: "推荐"
+                if (res.data.ok) {
+                    this.userInfo.background = res.data.image
+                    this.$axios.post('/api/user/background', {
+                        background: res.data.image,
+                        id: this.userId
+                    }).then(res => {
+                        if (res.data.ok) {
+                            this.$notify.success({
+                                title: '成功',
+                                message: '上传背景成功!',
+                                offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
+                            })
+                        } else {
+                            this.$notify.error({
+                                title: '失败',
+                                message: '上传背景失败!',
+                                offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
+                            })
+                        }
+                    })
+                } else {
+                    this.$notify.error({
+                        title: '失败',
+                        message: '上传背景失败!',
+                        offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
+                    })
                 }
             })
-        }
+
+        },
+        handleContextMenu(e) {
+            this.$store.commit('SET_STATE', {
+                x: e.clientX,
+                y: e.clientY,
+                menuList: [
+                    {
+                        label: '私聊',
+                        command: 'chat',
+                        id: this.userInfo.id,
+                        icon: 'el-icon-chat-dot-square'
+                    }
+                ],
+                isShow: true
+            })
+        },
     },
     computed: {
-        avatar() {
-            return localStorage.getItem('avatar')
-        },
-        username() {
-            return localStorage.getItem('username')
-        },
+        ...mapState({
+            avatar: state => state.user.avatar,
+            username: state => state.user.username,
+            userId: state => state.user.userId
+        }),
         id() {
             return this.$route.params.id
         },
-        userId() {
-            return localStorage.getItem('user')
-        },
-    },
-    watch: {
-        id: {
-            immediate: true,
-            handler(newVal, oldVal) {
-                this.controller?.abort()
-                this.controller = new AbortController()
-                this.init()
-            }
-        }
     },
     beforeDestroy() {
         this.controller?.abort();
+    },
+    created() {
+        this.init()
     }
 }
 </script>
@@ -149,84 +230,176 @@ export default {
 
     .info {
         width: 100%;
-        padding: 20px 0;
+        padding-bottom: 10px;
 
         .info-header {
             width: 100%;
+            height: 240px;
             display: flex;
+            border-radius: 10px;
+            align-items: flex-end;
             position: relative;
             justify-content: space-between;
 
             .info-header-avatar {
-                width: 120px;
-                height: 120px;
-                transform: translateX(10px);
                 display: flex;
+                align-items: center;
+                margin: 0 0 10px 10px;
+                flex: 1;
+                overflow: hidden;
 
                 img {
-                    height: 100%;
-                    width: 100%;
-                    border-radius: 20px;
+                    width: 60px;
+                    height: 60px;
+                    border-radius: 8px;
                     object-fit: cover;
                 }
 
                 span {
                     white-space: nowrap;
-                    font-size: 96px;
-                    max-width: calc(100% - 120px);
+                    font-size: 30px;
                     line-height: 1;
+                    display: inline-block;
+                    width: fit-content;
+                    padding: 0 10px;
                     color: #333;
                     font-weight: 900;
-                    display: inline-block;
-                    padding: 0 10px;
+                    user-select: none;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                 }
             }
 
             .info-header-info {
-                width: 100%;
-                display: flex;
-                justify-content: flex-end;
-                position: absolute;
-                bottom: 30%;
 
                 .info-header-info-post {
+                    cursor: pointer;
                     width: fit-content;
+                    white-space: nowrap;
                     padding: 10px 20px;
                     background-color: #fffd;
                     border-radius: 10px;
                     border: none;
+                    margin: 0 15px 15px 0;
+                    user-select: none;
+                    color: #333;
                 }
             }
 
-            &::after {
-                content: "";
-                display: block;
+            .info-header-bg {
                 position: absolute;
-                height: 1px;
-                width: 100%;
-                bottom: 20%;
-                z-index: -1;
-                background-color: white;
+                top: 15px;
+                left: 15px;
+
+                .info-header-info-bg {
+                    height: 30px;
+                    width: 30px;
+                    line-height: 30px;
+                    background-color: #333a;
+                    border-radius: 10px;
+                    border: none;
+                    color: white;
+                    cursor: pointer;
+
+                    &:hover {
+                        background-color: #000a;
+                    }
+
+                    label {
+                        display: block;
+                        height: 100%;
+                        width: 100%;
+                    }
+                }
+            }
+
+            .info-header-back {
+                position: absolute;
+                top: 15px;
+                left: 15px;
+
+                .info-header-info-back {
+                    height: 20px;
+                    line-height: 20px;
+                    padding: 5px 10px;
+                    box-sizing: content-box;
+                    background-color: #333a;
+                    border-radius: 10px;
+                    border: none;
+                    color: white;
+                    cursor: pointer;
+                    user-select: none;
+
+                    &:hover {
+                        background-color: #000a;
+                    }
+
+                    i {
+                        margin-right: 5px;
+                    }
+
+                    a {
+                        color: white;
+                        text-decoration: none;
+                        height: 100%;
+                        width: 100%;
+                        display: block;
+                    }
+                }
+            }
+
+            .info-header-world {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                height: 1rem;
+                width: 1rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                .info-header-info-world {
+                    line-height: 1;
+                    border: none;
+                    color: white;
+                    cursor: pointer;
+                    background-color: transparent;
+                    filter: drop-shadow(0 0 10px #000);
+
+                    &:hover {
+                        filter: drop-shadow(0 0 10px #000) invert(1);
+                    }
+
+                    i {
+                        color: white;
+                        font-size: 1rem;
+                    }
+
+                }
             }
         }
 
 
     }
 
-    .loading {
-        text-align: center;
-        padding: 10px;
+    .loading,
+    .zero,
+    .end {
+        user-select: none;
+
         color: white;
+        text-align: center;
+    }
+
+    .loading {
+        padding: 10px;
         font-size: 14px;
         font-weight: 400;
     }
 
     .zero {
-        text-align: center;
         padding: 20px;
-        color: white;
         font-size: 16px;
-        font-weight: 400;
         font-weight: 700;
         line-height: 2;
         display: flex;
@@ -259,12 +432,9 @@ export default {
     }
 
     .end {
-        text-align: center;
         padding: 20px;
-        color: white;
         font-size: 14px;
         font-weight: 400;
-
     }
 
     @media screen and (max-width: 600px) {
@@ -276,6 +446,10 @@ export default {
 
         &::-webkit-scrollbar {
             width: 0;
+        }
+
+        .info-header {
+            border-radius: 0 0 10px 10px !important;
         }
 
         .info-header-info-post {

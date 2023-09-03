@@ -1,13 +1,9 @@
 <template>
   <div class="border" id="border" @dragover.capture="dragover" @dragleave.capture="dragleave" @drop.capture="drop"
-    :style="{ '--background-color': color }">
-    <div class="border-hello" v-if="!isMobile || !$route.name.includes('chat')">
-      <img :src="'https://zeqichat.xyz' + avatar" class="avatar" />你好，<span
-        v-html="filterMessage(formatMessage(username))"></span>
-    </div>
+    :style="{ '--background-color': color }" @contextmenu.prevent.stop="handleContextMenu">
+    <Header></Header>
     <div class="home">
-      <SideBar :to="to" :isMobile="isMobile" class="home-side"
-        v-if="!isMobile || !$route.name.includes('chat') && !$route.name.includes('post')" />
+      <SideBar class="home-side" v-if="!isMobile || !$route.name.includes('chat') && !$route.name.includes('post')" />
       <ul class="home-list"
         v-if="!isMobile || !$route.name.includes('chat') && !$route.name.includes('blog') && !$route.name.includes('post')">
         <li class="home-list-item home-list-header">
@@ -29,66 +25,49 @@
             <input class="home-list-item-search-btn" type="submit" :value="isAdd ? '添加' : '查询'" />
           </form>
         </li>
-        <UserItem v-for="user in friendList" :key="user.id" :user="user" @changeUser="changeUser" :to="to"
-          v-if="!isCheckRequest"></UserItem>
+        <UserItem v-for="user in friendList" :key="user.id" :user="user" @changeUser="changeUser" v-if="!isCheckRequest">
+        </UserItem>
 
         <li class="home-list-item home-list-hr" v-if="isCheckRequest">好友请求</li>
         <RequestItem v-for="user in requestList" :key="user.request_id" :user="user"
           v-if="isCheckRequest && user.from_id != userId" @resolveUser="resolveUser" @rejectUser="rejectUser">
         </RequestItem>
+        <li class="home-list-item no-request" v-if="isCheckRequest && !requestList.length">暂无好友请求</li>
         <li class="home-list-item home-list-hr" v-if="isCheckRequest">我的请求</li>
         <RequestItem v-for="user in sendList" :key="user.request_id" :user="user" v-if="isCheckRequest"></RequestItem>
+        <li class="home-list-item no-request" v-if="isCheckRequest && !sendList.length">暂无好友请求</li>
         <li class="home-list-item loading" v-if="!friendList.length"><i class="el-icon-loading"></i> <span>正在加载中...</span>
         </li>
       </ul>
-      <router-view :server="server" :unread_msg="unread_msg" :isDrag="isDrag" :isChangeAvatar="isChangeAvatar"
-        :onlineList="onlineList" :friendList="friendList" :isMobile="isMobile"
-        @cancelChangeAvatar="isChangeAvatar = false" @changeFriendlist="changeFriendlist"></router-view>
+      <router-view v-if="server && userId" :isDrag="isDrag" :isChangeAvatar="isChangeAvatar" :onlineList="onlineList"
+        :friendList="friendList" @cancelChangeAvatar="isChangeAvatar = false" @changeFriendlist="changeFriendlist"
+        @changeUnread="changeUnread" :key="$route.path"></router-view>
     </div>
     <ColorChange v-if="!isMobile" :color="color" @changeColor="changeColor" />
-    <div class="net">
-      <div class="net-type">Type:{{ netInfo.rtt <= 0 ? '无网络' : netInfo.effectiveType }}</div>
-          <div class="net-rtt">RTT:{{ netInfo.rtt }}</div>
-          <div class="net-status">
-            <div class="net-status-strength">
-              <div class="net-status-strength-bar" v-for="i in 3" :key="i"
-                :style="{ height: 33 * i + '%', backgroundColor: strength >= i ? strengthColor : '' }"></div>
-            </div>
-          </div>
-      </div>
-    </div>
-</div></template>
+  </div>
+</template>
 
 <script>
-import { io } from "@/utils/socketio.js";
 
 import { filterMessage, formatMessage } from '@/utils/message'
 import UserItem from "./UserItem";
 import RequestItem from "./RequestItem";
-import { WebSocketType } from "@/ws/index";
+import { WebSocketType, WORLD_ID } from "@/ws";
 
 import { Autocomplete } from 'element-ui'
 
 import { debounceFun } from "@/utils/debounce";
+import { mapState } from "vuex";
 
 export default {
   name: "Home",
   data() {
     return {
       isDrag: false,
-      to: 2023,
-      WorldID: 2023,
-      server: io(`wss://zeqichat.xyz?token=${localStorage.getItem("token")}`, {
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        reconnection: true,
-        reconnectionAttempts: Infinity
-      }),
+      WORLD_ID,
       onlineList: [],
       mobileShow: false,
-      unread_msg: 0,
       isChangeAvatar: false,
-      isMobile: window.innerWidth < 600,
       state: '',
       allUserList: [],
       friendList: [],
@@ -97,10 +76,6 @@ export default {
       isAdd: false,
       isCheckRequest: false,
       color: localStorage.getItem("color") || '#ff0000',
-      netInfo: {
-        effectiveType: '',
-        rtt: 0,
-      }
     }
   },
   components: {
@@ -108,32 +83,23 @@ export default {
     RequestItem,
     [Autocomplete.name]: Autocomplete,
     SideBar: () => import("./SideBar"),
-    ColorChange: () => import("@/components/ColorChange")
+    ColorChange: () => import("@/components/ColorChange"),
+    Header: () => import("./Header"),
   },
   computed: {
-    strength() {
-      return this.netInfo.rtt <= 0 ? 0 : this.netInfo.rtt <= 150 ? 3 : this.netInfo.rtt <= 550 ? 2 : 1
-    },
-    strengthColor() {
-      return this.strength == 3 ? '#0edb0e' : this.strength == 2 ? '#ff7f00' : this.strength == 1 ? '#ff0000' : 'transparent'
-    },
-    userId() {
-      return localStorage.getItem("user");
-    },
-    token() {
-      return localStorage.getItem("token");
-    },
-    username() {
-      return localStorage.getItem("username");
-    },
+    ...mapState({
+      userId: state => state.user.userId,
+      token: state => state.user.token,
+      username: state => state.user.username,
+      avatar: state => state.user.avatar,
+      isMobile: state => state.mobile.isMobile,
+      server: state => state.server.server
+    }),
     url() {
       return URL.createObjectURL(this.file)
     },
-    avatar() {
-      return localStorage.getItem("avatar")
-    },
     isRequest() {
-      return [...this.requestList, ...this.sendList].some(item => item.accept == 0)
+      return this.requestList.some(item => item.accept == 0)
     },
     unread_count() {
       return this.friendList.reduce((a, b) => {
@@ -145,6 +111,32 @@ export default {
     filterMessage,
     formatMessage,
     debounceFun,
+    changeUnread(id, count = 1) {
+      if (count == 0) {
+        this.friendList.find(user => user.id == id).unread = 0
+      } else {
+        this.friendList.find(user => user.id == id).unread++
+      }
+    },
+    handleContextMenu(e) {
+      this.$store.commit('SET_STATE', {
+        x: e.clientX,
+        y: e.clientY,
+        menuList: [
+          {
+            label: '刷新页面',
+            command: 'refresh',
+            icon: 'el-icon-refresh'
+          },
+          {
+            label: '添加好友',
+            command: 'add',
+            icon: 'el-icon-user'
+          }
+        ],
+        isShow: true
+      })
+    },
     changeColor(color) {
       this.color = color
       localStorage.setItem("color", color)
@@ -192,6 +184,7 @@ export default {
         this.$notify.error({
           title: '出错',
           message: "该用户不存在",
+          offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
         })
         return
       }
@@ -208,11 +201,11 @@ export default {
           this.$notify.success({
             title: '成功',
             message: res.data.msg,
+            offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
           })
         })
       }
       else {
-        this.to = to
         this.$router.replace({
           name: "chat",
           params: {
@@ -220,11 +213,13 @@ export default {
           }
         })
         this.$nextTick(() => {
-          document.querySelector('.user.active')?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'nearest'
-          })
+          setTimeout(() => {
+            document.querySelector('.user.active')?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+              inline: 'nearest',
+            })
+          }, 300)
         })
       }
     },
@@ -248,18 +243,7 @@ export default {
     drop() {
       this.isDrag = false
     },
-    async changeUser(id) {
-      if (id === null) return;
-
-      if (this.to == id && id == this.userId && !this.isMobile) {
-        this.isChangeAvatar = true
-        return;
-      }
-
-      if (this.to === id && !this.isMobile && this.$route.name === 'chat') return;
-
-      this.to = id
-
+    changeUser(id) {
       if (this.isMobile) {
         this.$router.push({
           name: "chat",
@@ -277,7 +261,9 @@ export default {
         })
     },
     changeFriendlist(id, last) {
-      const cur = this.friendList.splice(this.friendList.findIndex(user => user.id == id), 1)
+      const index = this.friendList.findIndex(user => user.id == id)
+      if (index == -1) return;
+      const cur = this.friendList.splice(index, 1)
       cur[0].last = last
       this.friendList.unshift(cur[0])
     },
@@ -285,17 +271,9 @@ export default {
       await this.getFriend()
       this.getRequestFriend()
 
-      let net = navigator.connection
-      net.addEventListener('change', (e) => {
-        this.netInfo.effectiveType = e.target.effectiveType
-        this.netInfo.rtt = e.target.rtt
-      })
-      this.netInfo.effectiveType = net.effectiveType
-      this.netInfo.rtt = net.rtt
+
 
       window.addEventListener('resize', this.getMobile)
-
-      this.to = localStorage.getItem("to") ?? this.WorldID;
 
       this.server.emit(WebSocketType.GroupList);
 
@@ -304,26 +282,34 @@ export default {
           this.$router.replace({
             name: "chat",
             params: {
-              id: this.to
+              id: localStorage.getItem("to") ?? this.WORLD_ID
             }
           });
         }
-
-      } else {
-        this.to = -1
       }
     },
 
     getMobile() {
-      this.isMobile = window.innerWidth < 600
+      this.$store.dispatch('setMobile', window.innerWidth < 600)
     }
   },
-  mounted() {
+  async created() {
+    let res = await this.$axios.get(`/api/user/${localStorage.getItem('token')}`)
+
+    this.$store.dispatch("login", {
+      username: res.data.data.username,
+      avatar: res.data.data.avatar,
+      token: localStorage.getItem('token'),
+      userId: res.data.data.id
+    });
+
+    this.$store.commit("SET_SERVER", `wss://zeqichat.xyz?token=${localStorage.getItem("token")}`)
+
     this.init();
 
     this.server.on(WebSocketType.GroupList, (data) => {
       let res = data.data;
-      res = res.filter((item) => item.to == this.userId || item.id == this.WorldID);
+      res = res.filter((item) => item.to == this.userId || item.id == this.WORLD_ID);
       res.reduce((a, b) => {
         if (a.findIndex(item => item.id == b.id) == -1) {
           a.push(b)
@@ -339,8 +325,31 @@ export default {
 
     this.$bus.$on('mobileBack', () => {
       if (this.isMobile) {
-        this.to = -1
+        this.$router.replace("/home")
       }
+    })
+
+    this.$bus.$on('changeUser', (id) => {
+      this.changeUser(id)
+    })
+
+    this.$bus.$on('changeAvatar', () => {
+      this.isChangeAvatar = true
+    })
+
+    this.$bus.$on('addFriend', () => {
+      this.isAdd = true
+      this.isCheckRequest = true
+    })
+
+    this.server.on(WebSocketType.Error, (data) => {
+      this.$store.dispatch('logout')
+      this.$notify.error({
+        title: 'Error',
+        message: data.data,
+        offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
+      })
+      this.$router.replace('/')
     })
 
     this.server.on(WebSocketType.FriendRequest, (data) => {
@@ -433,14 +442,14 @@ export default {
   color: white;
   background-color: var(--background-color);
   background-image:
-    radial-gradient(at 40% 20%, hsla(28, 100%, 74%, 1) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, hsla(355, 100%, 93%, 1) 0px, transparent 50%),
-    radial-gradient(at 60% 40%, hsla(340, 100%, 76%, 1) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, hsla(22, 100%, 77%, 1) 0px, transparent 50%),
-    radial-gradient(at 0% 0%, hsla(343, 100%, 76%, 1) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, hsla(12, 100%, 90%, 1) 0px, transparent 50%),
-    radial-gradient(at 20% 60%, hsla(33, 100%, 76%, 1) 0px, transparent 50%),
-    radial-gradient(at 90% 90%, hsla(320, 100%, 76%, 1) 0px, transparent 50%);
+    radial-gradient(at 40% 60%, hsla(200, 100%, 90%, 1) 0px, transparent 50%),
+    radial-gradient(at 100% 50%, hsla(326, 100%, 80%, 1) 0px, transparent 50%),
+    radial-gradient(at 60% 40%, hsla(300, 100%, 80%, 1) 0px, transparent 50%),
+    radial-gradient(at 0% 70%, hsla(40, 100%, 80%, 1) 0px, transparent 50%),
+    radial-gradient(at 10% 0%, hsla(80, 100%, 80%, 1) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsla(120, 100%, 80%, 1) 0px, transparent 50%),
+    radial-gradient(at 20% 60%, hsla(245, 100%, 80%, 1) 0px, transparent 50%),
+    radial-gradient(at 90% 90%, hsla(0, 100%, 80%, 1) 0px, transparent 50%);
   border-radius: 15px;
   min-width: 400px;
   min-height: 300px;
@@ -457,50 +466,7 @@ export default {
     transform: translateX(-50%);
   }
 
-  .net {
-    position: absolute;
-    right: 10px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    font-size: 14px;
-    font-weight: bold;
 
-    .net-type {
-      font-size: 12px;
-    }
-
-    .net-rtt {
-      font-size: 12px;
-    }
-
-    .net-status {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-
-      .net-status-strength {
-        display: flex;
-        align-items: flex-end;
-        gap: 2px;
-        height: 20px;
-        box-sizing: content-box;
-        padding: 5px;
-        background-color: #fffa;
-        border-radius: 5px;
-        box-shadow: 1px 1px 2px #000;
-
-        &-bar {
-          width: 5px;
-          background-color: #eee8;
-          box-shadow: 1px 1px 2px #000;
-        }
-      }
-    }
-  }
 }
 
 .border::-webkit-resizer {
@@ -527,27 +493,6 @@ export default {
   transform: translateY(-50%);
   font-weight: bold;
   font-size: calc(var(--BoarderLeft) * 0.6);
-}
-
-.border .border-hello {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  height: var(--BoarderTop);
-  line-height: var(--BoarderTop);
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  .avatar {
-    height: 30px;
-    width: 30px;
-    object-fit: cover;
-    border-radius: 50%;
-    margin-right: 10px;
-  }
 }
 
 .border .home {
@@ -662,6 +607,18 @@ export default {
       }
     }
 
+    &.no-request {
+      display: flex;
+      pointer-events: none;
+      color: #777;
+      line-height: 14px;
+      height: 14px;
+      font-size: 14px;
+      margin-top: 10px;
+      justify-content: center;
+      user-select: none;
+    }
+
     form {
       display: flex;
       height: 100%;
@@ -770,22 +727,19 @@ export default {
       height: 100vh;
       width: 100vw;
       z-index: -999;
-      background: linear-gradient(#C32F01 50%, #fff 50%);
+      background-color: #ff0000;
+      background-image:
+        radial-gradient(at 50% 0%, hsla(200, 100%, 90%, 1) 0px, transparent 50%),
+        radial-gradient(at 50% 10%, hsla(326, 100%, 80%, 1) 0px, transparent 50%),
+        radial-gradient(at 10% 40%, hsla(300, 100%, 80%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 70%, hsla(40, 100%, 80%, 1) 0px, transparent 50%),
+        radial-gradient(at 10% 0%, hsla(80, 100%, 80%, 1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, hsla(120, 100%, 80%, 1) 0px, transparent 50%),
+        radial-gradient(at 10% 90%, hsla(245, 100%, 80%, 1) 0px, transparent 50%),
+        radial-gradient(at 90% 0%, hsla(0, 100%, 80%, 1) 0px, transparent 50%);
+      filter: blur(10px);
+      transform: scale(1.1);
     }
-  }
-
-  .border .border-hello {
-    position: fixed;
-    width: 100%;
-    box-sizing: content-box;
-    padding-top: constant(safe-area-inset-top);
-    padding-top: env(safe-area-inset-top);
-    height: 50px;
-    left: auto;
-    transform: none;
-    line-height: 50px;
-    background-color: #C32F01;
-    z-index: 999;
   }
 
   .border .border-title {

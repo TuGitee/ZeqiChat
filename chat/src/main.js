@@ -29,10 +29,12 @@ import CollapseTransition from 'element-ui/lib/transitions/collapse-transition';
 
 Vue.component(CollapseTransition.name, CollapseTransition)
 
-import { Notification, MessageBox, Loading } from 'element-ui';
+import { Notification, MessageBox, Loading, Message } from 'element-ui';
 Vue.prototype.$notify = Notification
 Vue.prototype.$confirm = MessageBox.confirm
 Vue.prototype.$alert = MessageBox.alert
+Vue.prototype.$message = Message
+
 
 Vue.use(Loading);
 Vue.use(Loading.directive);
@@ -48,11 +50,15 @@ const options = {
   closeEl: false,
   tapToClose: true,
   zoomEl: false, //控制是否显示放大缩小按钮
+  shareEl: false,
+  counterEl: false,
   tapToToggleControls: true,
   clickToCloseNonZoomable: true,
   indexIndicatorSep: ' / '
 }
 Vue.use(preview, options)
+
+import store from './store'
 
 
 new Vue({
@@ -60,5 +66,6 @@ new Vue({
   router,
   beforeCreate() {
     Vue.prototype.$bus = this
-  }
+  },
+  store
 }).$mount('#app')

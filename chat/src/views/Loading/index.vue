@@ -1,18 +1,20 @@
 <template>
     <div class="loading">
-        <h1 class="title">
-            <span v-for="(text, index) in   title " :key="index" :style="{ '--i': index + 's' }">{{ text }}</span>
-        </h1>
         <router-link to="/login">
+            <h1 class="title">
+                <span v-for="(text, index) in   title " :key="index" :style="{ '--i': index + 's' }">{{ text }}</span>
+            </h1>
+        </router-link>
+        <a href="https://zeqi.tech">
             <p class="subtitle">
                 <span v-for="(text, index) in subTitle" :key="index" :style="{ '--i': index + 's' }">{{ text }}</span>
             </p>
-        </router-link>
+        </a>
 
         <p class="image">
-            <Left class="left" @click.native="goBack" />
+            <Left class="left" @click.native="goBack" text="回退" />
             <img src="@/assets/zeqi.png" alt="" @click="goHome" />
-            <Left class="right" @click.native="goForward" />
+            <Left class="right" :reverse="true" @click.native="goForward" text="前进" />
         </p>
     </div>
 </template>
@@ -22,8 +24,8 @@ export default {
     name: "Loading",
     data() {
         return {
-            title: "择栖工作室",
-            subTitle: "择栖CHAT"
+            title: "择栖CHAT",
+            subTitle: "- 择栖工作室 -"
         }
     },
     components: {
@@ -34,7 +36,7 @@ export default {
             this.$router.go(-1);
         },
         goHome() {
-            location.href = "https://zeqi.tech";
+            this.$router.push("/login");
         },
         goForward() {
             this.$router.push("/login");
@@ -118,7 +120,6 @@ export default {
 
         .right {
             width: 5vmin;
-            transform: rotate(180deg);
             animation: scale 2s infinite both;
             filter: drop-shadow(0 0 10px #e42525);
 
@@ -128,12 +129,12 @@ export default {
 
             @keyframes scale {
                 50% {
-                    transform: rotate(180deg) scale(1.1);
+                    transform: scale(1.1);
                 }
             }
 
             &:hover {
-                transform: rotate(180deg) scale(1.2);
+                transform: scale(1.2);
             }
         }
 

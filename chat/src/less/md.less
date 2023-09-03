@@ -172,6 +172,14 @@
     margin-top: 0;
 }
 
+/deep/ p:first-child {
+    margin-top: 0;
+}
+
+/deep/ p:last-child {
+    margin-bottom: 0;
+}
+
 /deep/ li p.first {
     display: inline-block;
 }
@@ -454,7 +462,7 @@
         td {
             padding: 0 !important;
             white-space: pre-wrap;
-            word-break: keep-all;
+            word-break: break-word;
         }
     }
 

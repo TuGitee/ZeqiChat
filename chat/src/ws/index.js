@@ -9,7 +9,10 @@ const WebSocketType = {
     WorldRead: 7,
     FriendRequest: 8,
     FriendAccept: 9,
-    FriendReject: 10
+    FriendReject: 10,
+    Recall: 11
 };
 
-export { WebSocketType };
+const WORLD_ID = 2023;
+
+export { WebSocketType, WORLD_ID };

@@ -17,7 +17,7 @@
       </div>
       <div class="login-box">
         <h1 class="login-box-title">登录</h1>
-        <el-form label-position="right" label-width="max-content" :model="form" :rules="rules" ref="Form">
+        <el-form label-position="right" label-width="max-content" :model="form" :rules="rules" ref="Form" @keyup.enter.native="login">
           <el-form-item prop="email" :label="isPassword ? '邮箱/用户名' : '邮箱'">
             <el-input v-model="form.email"></el-input>
           </el-form-item>
@@ -33,7 +33,6 @@
           <el-form-item>
             <el-button @click="isPassword = !isPassword">{{ isPassword ? "使用验证码登录" : "使用密码登录" }}</el-button>
             <el-button type="primary" class="form-button" id="login" @click="login">登录</el-button>
-            <el-button type="info" @click="resetForm">重置</el-button>
           </el-form-item>
 
         </el-form>
@@ -71,15 +70,13 @@ export default {
             .post("/api/login", data)
             .then((res) => {
               if (res.data.ok === 1) {
-                localStorage.setItem("username", res.data.username);
-                localStorage.setItem("user", res.data.user);
-                localStorage.setItem("avatar", res.data.avatar);
                 localStorage.setItem("token", res.data.token);
                 this.$router.push("/home");
               } else {
                 this.$notify.error({
                   title: '出错',
                   message: res.data.msg,
+                  offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 });
                 this.handleError()
               }
@@ -92,6 +89,7 @@ export default {
           this.$notify.warning({
             title: '警告',
             message: "请填写完整",
+            offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
           });
           this.handleError()
           return;
@@ -105,6 +103,7 @@ export default {
         this.$notify.warning({
           title: '警告',
           message: "邮箱格式不正确",
+          offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
         })
         this.handleError()
         return
@@ -148,9 +147,6 @@ export default {
         })
       }, 1000);
     },
-    resetForm() {
-      this.$refs.Form.resetFields()
-    }
   },
   mounted() {
     window.addEventListener('mousemove', this.handleMouseMove)

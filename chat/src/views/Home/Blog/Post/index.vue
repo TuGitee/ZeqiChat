@@ -73,6 +73,7 @@ export default {
                     title: "错误",
                     message: "请输入内容",
                     duration: 2000,
+                    offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 })
                 return;
             }
@@ -119,6 +120,7 @@ export default {
                             title: "错误",
                             message: "上传失败",
                             duration: 2000,
+                            offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                         })
                         return;
                     }
@@ -129,6 +131,7 @@ export default {
                         title: "错误",
                         message: "上传失败",
                         duration: 2000,
+                        offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                     })
                     return;
                 }
@@ -144,7 +147,8 @@ export default {
                     title: "成功",
                     message: "发布成功",
                     type: "success",
-                    duration: 2000
+                    duration: 2000,
+                    offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 })
                 this.isLoading = false;
                 this.$router.go(-1)
@@ -154,6 +158,7 @@ export default {
                     title: "错误",
                     message: "发布失败",
                     duration: 2000,
+                    offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 })
             })
 

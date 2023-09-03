@@ -5,6 +5,7 @@ const upload = multer({ dest: 'public/uploads' });
 const JWT = require('../utils/JWT');
 const pool = require('../config/pool');
 const fs = require('fs');
+const { md5 } = require('../utils/CRYPTO');
 const webp = require('webp-converter');
 
 router.get('/', async (ctx, next) => {
@@ -18,7 +19,13 @@ router.get('/', async (ctx, next) => {
 
 router.get('/:id', async (ctx, next) => {
     const key = ctx.params.id
-    const user = await pool.query('SELECT id,email,username,avatar FROM users WHERE id=?', [key]);
+    const payload = JWT.verify(key);
+    if (payload) {
+        ctx.body = { ok: 1, data: payload };
+        return;
+    }
+
+    const user = await pool.query('SELECT u.id,u.email,u.username,u.avatar,b.background FROM users u LEFT JOIN background b ON u.id=b.id WHERE u.id=?', [key]);
     if (user[0].length)
         ctx.body = { ok: 1, data: user[0][0] };
     else
@@ -27,6 +34,7 @@ router.get('/:id', async (ctx, next) => {
 
 router.post('/', upload.single('avatar'), async (ctx, next) => {
     const { email, username, password, repassword, captcha } = ctx.request.body;
+
     if (ctx.session.captcha?.captcha !== captcha && ctx.session.captcha?.email !== email) {
         ctx.body = { ok: 0, msg: '验证码错误' };
         return;
@@ -36,6 +44,7 @@ router.post('/', upload.single('avatar'), async (ctx, next) => {
         ctx.body = { ok: 0, msg: '两次密码不一致' };
         return;
     }
+
     const userEmail = await pool.query('SELECT id FROM users WHERE email=?', [email]);
     if (userEmail[0].length !== 0) {
         ctx.body = { ok: 0, msg: '邮箱已被注册' };
@@ -57,9 +66,10 @@ router.post('/', upload.single('avatar'), async (ctx, next) => {
             fs.unlink(`public/uploads/${ctx.file.filename}`, () => { console.log('new avatar delete') })
         }
     }
+    
     const avatar = ctx.file ? `/uploads/${ctx.file.filename}.webp` : `/images/default_avatar.png`
 
-    pool.query('INSERT INTO users (email,username,password,avatar) VALUES (?,?,?,?)', [email, username, password, avatar])
+    pool.query('INSERT INTO users (email,username,password,avatar) VALUES (?,?,?,?)', [email, username, md5(md5(password)+email), avatar])
     ctx.session.captcha = null;
     ctx.body = { ok: 1 };
 })
@@ -95,6 +105,12 @@ router.put('/', upload.single('avatar'), async (ctx, next) => {
         ctx.body = { ok: 0, msg: "用户名重复！" };
     }
 
+})
+
+router.post('/background', async (ctx, next) => {
+    const { id, background } = ctx.request.body;
+    pool.query('replace into background (id,background) values (?,?)', [id, background])
+    ctx.body = { ok: 1 };
 })
 
 module.exports = router

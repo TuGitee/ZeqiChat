@@ -1,12 +1,16 @@
 const JWT = require('../utils/JWT');
 const pool = require('../config/pool');
-const { WORLD_ID , WebSocketType} = require('../utils/WORLD');
+const { WORLD_ID, WebSocketType } = require('../utils/WORLD');
 
 function start(server) {
     const io = require('socket.io')(server, { cors: true });
     io.on('connect', async (socket) => {
         const payload = JWT.verify(socket.handshake.query.token);
+
+        if(io.sockets.sockets.find(item => item.user.id === payload.id)) return socket.emit(WebSocketType.Error, createMessage('system', 'user already login'))
+
         socket.user = payload;
+        
         if (payload) {
             await pool.query('update users set online=1 where id=?', [socket.user.id])
         } else {
@@ -16,26 +20,33 @@ function start(server) {
             changeList(io, socket)
         })
 
-        socket.on(WebSocketType.GroupChat, (data) => {
-            socket.broadcast.emit(WebSocketType.GroupChat, createMessage(socket.user.username, data.msg, socket.user.avatar, WORLD_ID, +new Date()))
-            pool.query('insert into world (from_id,message) values (?,?)', [socket.user.id, data.msg])
+        socket.on(WebSocketType.GroupChat, async (data) => {
+            const res = await pool.query('insert into world (from_id,message) values (?,?)', [socket.user.id, data.msg])
+            io.sockets.emit(WebSocketType.GroupChat, createMessage(socket.user.username, data.msg, socket.user.avatar, socket.user.id, +new Date(), res[0].insertId))
         })
 
-        socket.on(WebSocketType.PrivateChat, (data) => {
+        socket.on(WebSocketType.PrivateChat, async (data) => {
+            const res = await pool.query('insert into private (from_id,to_id,message) values (?,?,?)', [socket.user.id, data.to, data.msg])
             io.sockets.sockets.forEach(item => {
-                if (item.user.id === Number(data.to)) {
-                    item.emit(WebSocketType.PrivateChat, createMessage(socket.user.username, data.msg, socket.user.avatar, String(socket.user.id), +new Date()))
-                    pool.query('insert into private (from_id,to_id,message) values (?,?,?)', [socket.user.id, item.user.id, data.msg])
+                if (item.user.id == data.to || item.user.id == socket.user.id) {
+                    item.emit(WebSocketType.PrivateChat, createMessage(socket.user.username, data.msg, socket.user.avatar, String(socket.user.id), +new Date(), res[0].insertId))
                 }
             })
         })
 
         socket.on(WebSocketType.PrivateRead, async (data) => {
             await pool.query('update private set to_read=1 where from_id=? and to_id=?', [Number(data.to), Number(socket.user.id)])
+            io.sockets.sockets.forEach(item => {
+                if (item.user.id == data.to) {
+                    item.emit(WebSocketType.PrivateRead, createMessage(item.user.id, null, null, socket.user.id, +new Date()))
+                }
+            })
+
         })
 
         socket.on(WebSocketType.WorldRead, async () => {
             await pool.query('update world set read_list=concat(read_list,?) where from_id!=? and read_list not like ?', [`${socket.user.id},`, socket.user.id, `%${socket.user.id}%`])
+            socket.broadcast.emit(WebSocketType.WorldRead, createMessage(socket.user.username, null, socket.user.avatar, socket.user.id, +new Date()))
         })
 
         socket.on(WebSocketType.FriendRequest, async (data) => {
@@ -62,7 +73,7 @@ function start(server) {
                         id: socket.user.id,
                         unread: 0,
                         online: 1,
-                        last: last[last.length-1] ?? '',
+                        last: last[last.length - 1] ?? '',
                     }, socket.user.avatar, String(socket.user.id), +new Date()))
                 }
             })
@@ -76,6 +87,18 @@ function start(server) {
             })
         })
 
+        socket.on(WebSocketType.Recall, async (data) => {
+            if (data.to == WORLD_ID) {
+                await pool.query('update world set recall=1 where world_msg_id=?', [data.id]);
+            } else {
+                await pool.query('update private set recall=1 where private_msg_id=?', [data.id]);
+            }
+            socket.broadcast.emit(WebSocketType.Recall, createMessage(null, {
+                to: data.to,
+                id: data.id
+            }))
+        })
+
         socket.on('disconnect', () => {
             pool.query('update users set online=0 where id=?', [socket.user.id])
             changeList(io, socket)
@@ -83,21 +106,21 @@ function start(server) {
     })
 }
 
-function createMessage(user, data, avatar, id, time) {
+function createMessage(user, data, avatar, id, time, msg_id) {
     return {
         user,
         data,
         avatar,
         id,
-        time
+        time,
+        msg_id
     }
 }
 
 async function changeList(io, socket) {
     const data = []
     const users = Array.from(io.sockets.sockets).map(item => item[1].user).filter(item => item)
-    
-    // let world = await pool.query('select * from world where read_list not like ? and from_id!=?', [`%${socket.user.id}%`, socket.user.id])
+
     let world = await pool.query('select w.create_time,u.username,w.message from world w inner join users u on w.from_id=u.id order by w.world_msg_id desc limit 1')
     world = world[0]
     data.push({
@@ -119,7 +142,7 @@ async function changeList(io, socket) {
                     id: user.id,
                     unread: 0,
                     to: item.id,
-                    last: last[last.length-1]??''
+                    last: last[last.length - 1] ?? ''
                 })
             }
 
@@ -132,7 +155,7 @@ async function changeList(io, socket) {
                     id: user.id,
                     unread: msg.length,
                     to: item.id,
-                    last: last[last.length-1]??''
+                    last: last[last.length - 1] ?? ''
                 })
             }
         }

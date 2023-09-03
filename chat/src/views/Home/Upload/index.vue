@@ -1,9 +1,15 @@
 <template>
     <div class="upload">
         <div class="upload-content">
-            <div class="upload-content-title">发送图片</div>
-            <div class="upload-content-msg">你确定要发送文件吗？（图片大小不得超过200KB）</div>
-            <div class="upload-content-image"><img :src="url"></div>
+            <div class="upload-content-title">发送{{ isImage ? '图片' : '文件' }}</div>
+            <div class="upload-content-msg">你确定要发送{{ isImage ? '图片' : '文件' }}吗？</div>
+            <div class="upload-content-image" v-if="isImage"><img :src="url"></div>
+            <div class="upload-content-file" v-else>
+                <FileIcon :type="suffix"></FileIcon>
+            </div>
+
+            <div class="upload-content-file-name">{{ file.name }}</div>
+
             <div class="upload-content-btns">
                 <button class="upload-content-btns-cancel" @click="cancel">取消</button>
                 <button class="upload-content-btns-confirm" @click="confirm">确定</button>
@@ -16,8 +22,8 @@
 export default {
     name: 'Upload',
     props: {
-        url: {
-            type: String
+        file: {
+            type: File
         }
     },
     methods: {
@@ -27,6 +33,63 @@ export default {
         confirm() {
             this.$emit('confirm')
         }
+    },
+    computed: {
+        isImage() {
+            return this.file.type.includes("image")
+        },
+        url() {
+            return URL.createObjectURL(this.file)
+        },
+        suffix() {
+            return this.file.name.split('.').pop().toLowerCase()
+        },
+        type() {
+            switch (this.suffix) {
+                case 'doc':
+                case 'docx':
+                case 'xls':
+                case 'xlsx':
+                case 'ppt':
+                case 'pptx':
+                case 'pdf':
+                case 'txt':
+                case 'zip':
+                case 'csv':
+                case 'ai':
+                case 'psd':
+                case 'png':
+                case 'jpg':
+                case 'jpeg':
+                case 'css':
+                case 'htm':
+                case 'html':
+                case 'avi':
+                case 'mp4':
+                case 'dll':
+                case 'waw':
+                case 'mp3':
+                case 'mp3':
+                case 'wav':
+                case 'wma':
+                case 'aac':
+                case 'ogg':
+                case 'flac':
+                case 'm4a':
+                case 'json':
+                case 'js':
+                case 'jsp':
+                case 'ts':
+                case 'py':
+                case 'md':
+                    return this.suffix
+                default:
+                    return 'unknown'
+            }
+        }
+    },
+    components: {
+        FileIcon: () => import('@/components/FileIcon')
     }
 }
 </script>
@@ -62,6 +125,7 @@ export default {
         flex-direction: column;
         max-height: 80%;
         width: 90%;
+        gap: 10px;
 
         .upload-content-title {
             font-size: 20px;
@@ -72,7 +136,7 @@ export default {
             font-size: 16px;
             font-weight: 400;
             text-align: center;
-            margin: 20px 0;
+            margin: 10px 0;
         }
 
         .upload-content-image {
@@ -110,6 +174,12 @@ export default {
             .upload-content-btns-confirm {
                 background-color: #3876b5;
                 color: white;
+            }
+        }
+
+        .upload-content-file {
+            .icon {
+                width: 100%;
             }
         }
     }

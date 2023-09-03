@@ -34,6 +34,7 @@
 <script>
 import { filterMessage, formatMessage } from "@/utils/message";
 import formatTime from '@/utils/formatTime.js'
+import { mapState } from "vuex";
 export default {
     name: 'UserItem',
     props: {
@@ -42,12 +43,10 @@ export default {
         },
     },
     computed: {
-        userId() {
-            return localStorage.getItem("user");
-        },
-        token() {
-            return localStorage.getItem("token");
-        }
+        ...mapState({
+            userId: state => state.user.userId,
+            token: state => state.user.token
+        })
     },
     methods: {
         filterMessage,

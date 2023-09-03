@@ -4,6 +4,7 @@ const CAPTCHA = require('../utils/CAPTCHA');
 const JWT = require('../utils/JWT');
 const pool = require('../config/pool');
 const { transporter, receiver } = require('../utils/MAIL')
+const {md5} = require('../utils/CRYPTO')
 
 router.get('/', async (ctx, next) => {
     const email = ctx.query.email
@@ -24,7 +25,7 @@ router.post('/', async (ctx, next) => {
     let user;
 
     if (password)
-        user = await pool.query('SELECT id,username,email,avatar,online FROM users WHERE email=? AND password=? OR username=? AND password=?', [email, password, email, password]);
+        user = await pool.query('SELECT id,username,email,avatar,online FROM users WHERE email=? AND password=? OR username=? AND password=?', [email, md5(md5(password)+email), email, md5(md5(password)+email)]);
     else {
         if (ctx.session.captcha?.captcha != captcha || ctx.session.captcha?.email != email) {
             ctx.body = { ok: 0, msg: '验证码错误' };
