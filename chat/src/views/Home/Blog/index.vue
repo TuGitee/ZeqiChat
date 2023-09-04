@@ -31,7 +31,7 @@
                 <div class="info-header-world" v-if="id == userId">
                     <button class="info-header-info-world">
                         <router-link :to="`/home/blog/${WORLD_ID}`">
-                            <i class="el-icon-s-promotion"></i>
+                            <i class="el-icon-s-promotion"></i> 推荐
                         </router-link>
                     </button>
                     <input type="file" id="upload" style="display: none" accept="image/*" @change="fileChange" />
@@ -216,6 +216,19 @@ export default {
     },
     created() {
         this.init()
+    },
+    watch: {
+        blogs(newVal) {
+            const ImageReg = /!\[(.+?)\]\((.+?)\)/g;
+            newVal.forEach(item => {
+                item.content = item.content.replace(ImageReg, (match, p1, p2) => {
+                    return `<img src="${p2}" alt="${p1}" preview="${item.blog_id}"/>`
+                })
+            })
+            this.$nextTick(() => {
+                this.$previewRefresh()
+            })
+        }
     }
 }
 </script>
@@ -353,10 +366,13 @@ export default {
                 top: 20px;
                 right: 20px;
                 height: 1rem;
-                width: 1rem;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+
+                a {
+                    color: unset;
+                }
 
                 .info-header-info-world {
                     line-height: 1;

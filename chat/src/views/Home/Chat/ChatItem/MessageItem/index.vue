@@ -6,7 +6,10 @@
         <div class="chat-item-msg">
             <div class="chat-item-msg-username" v-html="filterMessage(formatMessage(msg.username))"></div>
             <div class="chat-item-msg-flex">
-                <el-dropdown v-if="to != msg.id && userId == msg.id && msg.read_list && msg.read_list.length"
+                <button class="chat-item-msg-read" v-if="msg.isSending">
+                    <i class="el-icon-loading"></i>
+                </button>
+                <el-dropdown v-else-if="to != msg.id && userId == msg.id && msg.read_list && msg.read_list.length"
                     trigger="hover" @command="command">
                     <button class="el-dropdown-link" @click.stop>
                         <i class="el-icon-view"></i>
@@ -22,6 +25,7 @@
                     :class="msg.to_read ? 'check' : 'close'">
                     <i :class="msg.to_read ? 'el-icon-check' : 'el-icon-close'"></i>
                 </button>
+
                 <div class="chat-item-msg-content" v-if="msg.recall" @contextmenu.stop.prevent="handleMessageContextMenu">
                     <span class="chat-item-msg-message recall">该消息已被撤回</span>
                 </div>
@@ -103,6 +107,7 @@ export default {
             return /^\[.*\]\((.*)\)$/.test(this.msg.message.trim())
         },
         type() {
+            if (this.msg.suffix) return this.msg.suffix
             return this.msg.message.trim().match(/^\[.*\]\((.*)\)$/) ? this.msg.message.trim().match(/^\[.*\]\((.*)\)$/)[1].split(".").pop() : null
         },
         url() {
@@ -173,39 +178,49 @@ export default {
             this.$store.commit('SET_STATE', state)
         },
         handleMessageContextMenu(e) {
+            const menuList = [
+                {
+                    label: '复制',
+                    command: 'copy',
+                    id: this.msg.msg_id,
+                    content: this.msg.message,
+                    icon: 'el-icon-document-copy',
+                    disabled: Boolean(this.msg.recall)
+                },
+                {
+                    label: '转发',
+                    command: 'forward',
+                    id: this.msg.id,
+                    icon: 'el-icon-chat-dot-square',
+                    disabled: true
+                }, {
+                    label: '删除',
+                    command: 'delete',
+                    id: this.msg.msg_id,
+                    icon: 'el-icon-delete',
+
+                },
+                {
+                    label: '撤回',
+                    command: 'recall',
+                    id: this.msg.msg_id,
+                    icon: 'el-icon-refresh-right',
+                    disabled: this.msg.id != this.userId || Boolean(this.msg.recall)
+                }
+            ]
+            if (/^<img.*?src="(.*?)".*?>$/.test(this.msg.message.trim())) {
+                menuList.push({
+                    label: '下载图片',
+                    command: 'downloadImg',
+                    id: this.msg.msg_id,
+                    content: this.msg.message.trim().match(/^<img.*?src="(.*?)".*?>$/)[1],
+                    icon: 'el-icon-picture-outline',
+                })
+            }
             const state = {
                 x: e.clientX,
                 y: e.clientY,
-                menuList: [
-                    {
-                        label: '复制',
-                        command: 'copy',
-                        id: this.msg.msg_id,
-                        content: this.msg.message,
-                        icon: 'el-icon-document-copy',
-                        disabled: Boolean(this.msg.recall)
-                    },
-                    {
-                        label: '转发',
-                        command: 'forward',
-                        id: this.msg.id,
-                        icon: 'el-icon-chat-dot-square',
-                        disabled: true
-                    }, {
-                        label: '删除',
-                        command: 'delete',
-                        id: this.msg.msg_id,
-                        icon: 'el-icon-delete',
-
-                    },
-                    {
-                        label: '撤回',
-                        command: 'recall',
-                        id: this.msg.msg_id,
-                        icon: 'el-icon-refresh-right',
-                        disabled: this.msg.id != this.userId || Boolean(this.msg.recall)
-                    }
-                ],
+                menuList,
                 isShow: true
             }
             this.$store.commit('SET_STATE', state)
@@ -263,13 +278,13 @@ export default {
                     disabled: this.msg.id != this.userId || Boolean(this.msg.recall)
                 }]
 
-                if(type === 'user' && this.userId == this.msg.id) {
+                if (type === 'user' && this.userId == this.msg.id) {
                     menuList.push({
                         label: '更改信息',
                         command: 'changeAvatar',
                         id: this.msg.id,
                         icon: 'el-icon-user'
-                        
+
                     })
                 }
                 this.$store.commit('SET_STATE', {

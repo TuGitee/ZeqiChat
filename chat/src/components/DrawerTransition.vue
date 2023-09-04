@@ -11,7 +11,7 @@ import {
 } from 'element-ui/lib/utils/dom'
 
 export default {
-    name: 'VpDrawerTransition',
+    name: 'DrawerTransition',
     components: {
         'el-drawer-transition': {
             functional: true,

@@ -53,7 +53,7 @@ export default {
                 this.$notify.error({
                   title: '失败',
                   message: error,
-                  duration: 1000, 
+                  duration: 1000,
                   offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 })
               })
@@ -77,11 +77,18 @@ export default {
         case 'add':
           this.$bus.$emit('addFriend')
           break
+        case 'downloadImg':
+          const a = document.createElement('a')
+          a.href = /^\/upload|\/images/.test(item.content) ? location.origin + item.content : item.content
+          a.download = Date.now() + '.png'
+          a.click()
+          a.remove()
+          break
       }
     }
   },
   mounted() {
-    window.addEventListener('click', this.handleClick)
+    window.addEventListener('click', this.handleClick, true)
     window.addEventListener('contextmenu', (e) => {
       e.preventDefault()
     })

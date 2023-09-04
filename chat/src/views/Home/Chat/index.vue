@@ -1,8 +1,8 @@
 <template>
     <div class="home-content" :class="{ 'home-content__show': to }" ref="box" :style="{ height }" @click="isTool = false">
         <div class="mask" v-if="!isFriend">
-            <p>对方不是您的好友，无法发送消息</p>
-            <p>请添加好友后重试</p>
+            <el-empty description="对方不是您的好友，无法发送消息"></el-empty>
+            <p @click.stop.prevent="addFriend"><i class="el-icon-thumb"></i><span>快去添加TA为好友吧</span></p>
         </div>
         <transition name="el-fade-in">
             <Firework :text="text" v-if="isFirework"></Firework>
@@ -225,7 +225,8 @@
             <input type="file" id="chat-file" @change="uploadFile" ref="upload" :accept="accept" />
         </div>
 
-        <ChangeAvatar v-if="isChangeAvatar" @cancel="cancel"></ChangeAvatar>
+        <ChangeAvatar v-if="isChangeAvatar" @cancel="cancel">
+        </ChangeAvatar>
 
         <Upload v-if="file" @cancel="cancelUpload" :file="file" @confirm="confirmUpload"></Upload>
     </div>
@@ -239,7 +240,7 @@ import { filterMessage, formatMessage } from "@/utils/message";
 import MonitorKeyboard from '@/utils/MonitorKeyboard.js';
 import { WebSocketType, WORLD_ID } from "@/ws/index";
 import { mapState } from "vuex";
-import { Popover } from 'element-ui';
+import { Popover, Empty } from 'element-ui';
 export default {
     name: 'Chat',
     components: {
@@ -247,6 +248,7 @@ export default {
         Upload,
         ChatItem,
         [Popover.name]: Popover,
+        [Empty.name]: Empty
     },
     props: {
         isDrag: {
@@ -332,6 +334,9 @@ export default {
         }
     },
     methods: {
+        addFriend(){
+            this.$bus.$emit('addFriend');
+        },
         keyboardEmoji() {
             alert('请使用手机自带的Emoji键盘发送表情！')
             this.$refs.textarea.focus()
@@ -385,9 +390,30 @@ export default {
                     name: `${Date.now()}.mp3`
                 })
 
+                const time = Date.now();
+
                 setTimeout(() => {
+                    const msg = {
+                        message: `<audio src="${URL.createObjectURL(file)}" data-value="${text}"></audio>`,
+                        avatar: this.avatar,
+                        create_time: time,
+                        username: this.username,
+                        msg_id: time,
+                        recall: false,
+                        id: this.userId,
+                        to_read: false,
+                        read_list: [],
+                        delta: this.msgList[this.msgList.length - 1] ? time - new Date(this.msgList[this.msgList.length - 1].create_time) : Infinity,
+                        isSending: true
+                    }
+
+                    this.msgList.push(msg);
+
                     this.scrollToBottom(this.$refs.contentList, 'smooth');
+
                 }, 1000)
+
+
 
                 const formData = new FormData();
                 formData.append('audio', file);
@@ -398,9 +424,9 @@ export default {
                 }).then(res => {
                     setTimeout(() => {
                         if (this.to == this.WORLD_ID)
-                            this.server.emit(WebSocketType.GroupChat, this.createMessage(null, `<audio src="${res.data.audio}" data-value="${text}"></audio>`, null, null));
+                            this.server.emit(WebSocketType.GroupChat, this.createMessage(null, `<audio src="${res.data.audio}" data-value="${text}"></audio>`, null, null, null, time));
                         else
-                            this.server.emit(WebSocketType.PrivateChat, this.createMessage(null, `<audio src="${res.data.audio}" data-value="${text}"></audio>`, this.to, null));
+                            this.server.emit(WebSocketType.PrivateChat, this.createMessage(null, `<audio src="${res.data.audio}" data-value="${text}"></audio>`, this.to, null, null, time));
 
                         this.pageDelta++;
 
@@ -506,13 +532,14 @@ export default {
             if (this.$refs.contentList.scrollTop + this.$refs.contentList.clientHeight + 100 >= this.$refs.contentList.scrollHeight)
                 this.scrollToBottom(this.$refs.contentList);
         },
-        createMessage(user, msg, to, id, msg_id) {
+        createMessage(user, msg, to, id, msg_id, time = Date.now()) {
             return {
                 user,
                 msg,
                 to,
                 id,
-                msg_id
+                msg_id,
+                time
             };
         },
         handleKeyDown(e) {
@@ -563,20 +590,38 @@ export default {
                 return;
             }
 
+            const time = Date.now()
             if (this.to == this.WORLD_ID) {
-                this.server.emit(WebSocketType.GroupChat, this.createMessage(null, this.input, null, null));
+                this.server.emit(WebSocketType.GroupChat, this.createMessage(null, this.input, null, null, null, time));
             } else {
                 this.server.emit(
                     WebSocketType.PrivateChat,
-                    this.createMessage(null, this.input, this.to, null)
+                    this.createMessage(null, this.input, this.to, null, null, time)
                 );
             }
+
+            const msg = {
+                message: this.input,
+                avatar: this.avatar,
+                create_time: time,
+                username: this.username,
+                msg_id: time,
+                recall: false,
+                id: this.userId,
+                to_read: false,
+                read_list: [],
+                delta: this.msgList[this.msgList.length - 1] ? time - new Date(this.msgList[this.msgList.length - 1].create_time) : Infinity,
+                isSending: true
+            }
+
+            this.msgList.push(msg);
+
 
             this.scrollToBottom(this.$refs.contentList, 'smooth');
 
             this.input = "";
 
-            this.$nextTick(()=>{
+            this.$nextTick(() => {
                 this.fitHeight(this.$refs.textarea);
             })
             this.pageDelta++;
@@ -678,6 +723,7 @@ export default {
                 100
             ) {
                 this.scrollToBottom(this.$refs.contentList, 'smooth');
+
                 if (this.to == this.WORLD_ID) this.server.emit(WebSocketType.WorldRead);
                 else
                     this.server.emit(WebSocketType.PrivateRead, this.createMessage(null, null, this.to));
@@ -687,6 +733,16 @@ export default {
             }
         },
         async recieveMessage(item, isWorld = false) {
+            const comMsg = this.msgList.find(_item => _item.create_time === item.time && _item.msg_id === item.time && _item.id == this.userId)
+            if (comMsg) {
+                comMsg.msg_id = item.msg_id;
+                comMsg.isSending = false;
+                if (/^\[.*\]\((.*)\)$/.test(item.data.trim()))
+                    comMsg.message = item.data;
+                this.$emit('changeFriendlist', this.to, comMsg);
+                return;
+            }
+
             const msg = {
                 message: item.data,
                 avatar: item.avatar,
@@ -725,6 +781,8 @@ export default {
                     this.$emit('changeUnread', item.id);
                 }
             }
+
+            this.scrollToBottom(this.$refs.contentList, 'smooth');
 
 
             // const db = await this.openDB("chat", this.version);
@@ -765,6 +823,30 @@ export default {
             const formData = new FormData();
             const type = this.file.type.includes("image") ? "image" : "file";
             formData.append(type, this.file);
+            const time = Date.now();
+            const suffix = this.file.name.split('.').pop()
+            const filename = this.file.name.replace(`.${suffix}`, '')
+
+            const msg = {
+                message: type === "image" ? `<img src="${URL.createObjectURL(this.file)}"/>` : `[${filename}_${time}.${suffix}](${URL.createObjectURL(this.file)})`,
+                suffix,
+                avatar: this.avatar,
+                create_time: time,
+                username: this.username,
+                msg_id: time,
+                recall: false,
+                id: this.userId,
+                to_read: false,
+                read_list: [],
+                delta: this.msgList[this.msgList.length - 1] ? time - new Date(this.msgList[this.msgList.length - 1].create_time) : Infinity,
+                isSending: true
+            }
+
+            this.msgList.push(msg);
+            setTimeout(() => {
+                this.scrollToBottom(this.$refs.contentList, 'smooth');
+            })
+
             this.$axios
                 .post("/api/" + type, formData, {
                     headers: {
@@ -776,12 +858,12 @@ export default {
                     if (this.to == this.WORLD_ID) {
                         this.server.emit(
                             WebSocketType.GroupChat,
-                            this.createMessage(null, msg, null, null)
+                            this.createMessage(null, msg, null, null, null, time)
                         );
                     } else {
                         this.server.emit(
                             WebSocketType.PrivateChat,
-                            this.createMessage(null, msg, this.to, null)
+                            this.createMessage(null, msg, this.to, null, null, time)
                         );
                     }
                     this.$emit('changeFriendlist', this.to, {
@@ -1032,7 +1114,6 @@ export default {
                         avatar: data.avatar
                     })
                 }
-                // this.friendList.find(user => user.id == data.id).unread = 0
             }
         })
 
@@ -1044,7 +1125,6 @@ export default {
                         this.msgList[i].to_read = true
                     }
                 }
-                // this.friendList.find(user => user.id == data.id).unread = 0
             }
 
         })
@@ -1084,17 +1164,13 @@ export default {
         })
 
         this.server.on(WebSocketType.Error, () => {
-            // localStorage.removeItem("token");
-            // localStorage.removeItem("username");
-            // localStorage.removeItem("avatar");
-            // localStorage.removeItem("user");
             this.$store.dispatch('logout');
             this.$router.push('/login')
         });
 
     },
     async beforeDestroy() {
-        this.monitorKeyboard.onEnd();
+        this.monitorKeyboard?.onEnd();
         // await this.saveInfo(this.to)
         this.controller?.abort();
     },
@@ -1135,6 +1211,19 @@ export default {
                         }, 500)
                     })
                 }
+        },
+        msgList(newVal) {
+            const ImageReg = /^<img src="(.*?)"\/?>$/;
+            newVal.forEach(item => {
+                if (ImageReg.test(item.message?.trim())) {
+                    if (!item.message.includes("preview"))
+                        item.message = item.message.replace(ImageReg, `<img src="$1" preview="${this.to}"/>`)
+                }
+            })
+            this.$nextTick(() => {
+                this.$previewRefresh()
+            })
+
         }
     }
 }
@@ -1175,9 +1264,13 @@ export default {
         p {
             color: white;
             font-size: 20px;
-            font-weight: bold;
             margin: 0;
             padding: 5px;
+            cursor: pointer;
+
+            i {
+                margin-right: 10px;
+            }
         }
     }
 }

@@ -7,29 +7,32 @@ function start(server) {
     io.on('connect', async (socket) => {
         const payload = JWT.verify(socket.handshake.query.token);
 
-        if(io.sockets.sockets.find(item => item.user.id === payload.id)) return socket.emit(WebSocketType.Error, createMessage('system', 'user already login'))
-
-        socket.user = payload;
-        
-        if (payload) {
-            await pool.query('update users set online=1 where id=?', [socket.user.id])
-        } else {
+        if(!payload) {
             socket.emit(WebSocketType.Error, createMessage('system', 'token error'))
         }
+        
+        // if(Array.from(io.sockets.sockets)?.map(item=>item[1].user)?.filter(item=>item)?.find(item=>item.id === payload.id)){
+        //     socket.emit(WebSocketType.Error, createMessage('system', 'user already login'))
+        // }
+
+        socket.user = payload;
+
+        await pool.query('update users set online=1 where id=?', [socket.user.id])
+
         socket.on(WebSocketType.GroupList, async () => {
             changeList(io, socket)
         })
 
         socket.on(WebSocketType.GroupChat, async (data) => {
             const res = await pool.query('insert into world (from_id,message) values (?,?)', [socket.user.id, data.msg])
-            io.sockets.emit(WebSocketType.GroupChat, createMessage(socket.user.username, data.msg, socket.user.avatar, socket.user.id, +new Date(), res[0].insertId))
+            io.sockets.emit(WebSocketType.GroupChat, createMessage(socket.user.username, data.msg, socket.user.avatar, socket.user.id, data.time, res[0].insertId))
         })
 
         socket.on(WebSocketType.PrivateChat, async (data) => {
             const res = await pool.query('insert into private (from_id,to_id,message) values (?,?,?)', [socket.user.id, data.to, data.msg])
             io.sockets.sockets.forEach(item => {
                 if (item.user.id == data.to || item.user.id == socket.user.id) {
-                    item.emit(WebSocketType.PrivateChat, createMessage(socket.user.username, data.msg, socket.user.avatar, String(socket.user.id), +new Date(), res[0].insertId))
+                    item.emit(WebSocketType.PrivateChat, createMessage(socket.user.username, data.msg, socket.user.avatar, String(socket.user.id), data.time, res[0].insertId))
                 }
             })
         })

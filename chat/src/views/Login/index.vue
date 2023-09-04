@@ -18,7 +18,7 @@
       <div class="login-box">
         <h1 class="login-box-title">登录</h1>
         <el-form label-position="right" label-width="max-content" :model="form" :rules="rules" ref="Form" @keyup.enter.native="login">
-          <el-form-item prop="email" :label="isPassword ? '邮箱/用户名' : '邮箱'">
+          <el-form-item prop="email" label="邮箱">
             <el-input v-model="form.email"></el-input>
           </el-form-item>
           <el-form-item prop="password" label="密码" v-if="isPassword">

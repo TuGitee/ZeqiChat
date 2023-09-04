@@ -15,7 +15,8 @@
             <i class="el-icon-zoom-in home-list-item-icon" v-if="isAdd" @click="isAdd = !isAdd" title="添加好友"></i>
             <i class="el-icon-search home-list-item-icon" @click="isAdd = !isAdd" title="搜索用户" v-else></i>
             <el-autocomplete v-model="state" :fetch-suggestions="querySearchAsync" :trigger-on-focus="false"
-              :placeholder="isAdd ? '添加好友' : '搜索好友'" @select="handleSelect" class="home-list-item-search" clearable>
+              :placeholder="isAdd ? '添加好友' : '搜索好友'" @select="handleSelect" class="home-list-item-search" clearable
+              :autofocus="isAdd">
               <template slot-scope="{ item }">
                 <h1 class="username">{{ item.username }}</h1>
                 <p class="email">{{ item.email }}</p>
@@ -170,7 +171,7 @@ export default {
         } else {
           cb(this.friendList.filter(item => item.username.includes(queryString)) || item.email.includes(queryString))
         }
-      }, 500)
+      }, 100)
       debounce()
     },
     submitUser() {
@@ -225,7 +226,9 @@ export default {
     },
     async getFriend() {
       let res = await this.$axios.get(`/api/friend?user=${this.token}`)
-      this.friendList = res.data.data
+      this.friendList = res.data.data.sort((a, b) => {
+        return new Date(b.last.create_time ?? '1970-01-01') - new Date(a.last.create_time ?? '1970-01-01')
+      })
     },
     async getRequestFriend() {
       let res = await this.$axios.get(`/api/friend/request?user=${this.token}`)
@@ -270,8 +273,6 @@ export default {
     async init() {
       await this.getFriend()
       this.getRequestFriend()
-
-
 
       window.addEventListener('resize', this.getMobile)
 

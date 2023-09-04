@@ -35,7 +35,7 @@ router.get('/:id', async (ctx, next) => {
 router.post('/', upload.single('avatar'), async (ctx, next) => {
     const { email, username, password, repassword, captcha } = ctx.request.body;
 
-    if (ctx.session.captcha?.captcha !== captcha && ctx.session.captcha?.email !== email) {
+    if (ctx.session.captcha?.captcha !== captcha || ctx.session.captcha?.email !== email) {
         ctx.body = { ok: 0, msg: '验证码错误' };
         return;
     }

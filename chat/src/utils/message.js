@@ -9,7 +9,7 @@ function filterMessage(str) {
 }
 
 const ExgType = {
-    img: new RegExp(`&lt;img src="((blob:)?http(s)?:\/\/.+|\/uploads\/.*?\.webp)" ?\/?&gt;`, 'g'),
+    img: new RegExp(`&lt;img src="((blob:)?http(s)?:\/\/.+|\/uploads\/.*?\.webp)" ?(preview="[0-9]*?") ?\/?&gt;`, 'g'),
 
     // video: new RegExp(`<video src="((blob:)?http(s)?:\/\/.+|\/uploads\/.*?)"><\/?video>`, 'g'),
 
@@ -20,11 +20,11 @@ const ExgType = {
 
     firework: new RegExp(`&lt;firework&gt;(.*?)&lt;\/?firework&gt;`, 'g'),
 
-    button: new RegExp(`&lt;button&gt;(.*?)&lt;\/?button&gt;`, 'g'),
+    // button: new RegExp(`&lt;button&gt;(.*?)&lt;\/?button&gt;`, 'g'),
 }
 
 function formatMessage(msg) {
-    msg = msg?.replace(/<(.*?)>(.*?)<(\/)?(.*?)>/g, '&lt;$1&gt;$2&lt;$3$4&gt;').replace(/<(.*?)\/>/g, '&lt;$1\/&gt;').replace(/<(iframe|a)/g, '&lt;$1').replace(/<\/(.*?)>/g, '&lt;\/$1&gt;').replace(/```(.*?)\n(.*?)\n```/g, (match, p1, p2) => {
+    msg = msg?.replace(/<(.*?)>(.*?)<(\/)?(.*?)>/g, '&lt;$1&gt;$2&lt;$3$4&gt;').replace(/<(.*?)\/>/g, '&lt;$1\/&gt;').replace(/<(iframe|a)/g, '&lt;$1').replace(/<(.*?)>/gm, '&lt;$1&gt;').replace(/<\/(.*?)>/g, '&lt;\/$1&gt;').replace(/```(.*?)\n(.*?)\n```/g, (match, p1, p2) => {
         return '```' + p1 + '\n' + p2.replace(/&lt;/g, '<').replace(/&gt;/g, '>') + '\n' + '```'
     })
 
@@ -35,16 +35,16 @@ function formatMessage(msg) {
                 switch (reg) {
                     case 'img':
                         if (p1) {
-                            if (/^\/uploads/.test(p1)) return `<img src="https://zeqichat.xyz${p1}" alt="404 Not Found" />`
-                            return `<img src="${p1}" />`
+                            if (/^\/uploads/.test(p1)) return `<img src="https://zeqichat.xyz${p1}" alt="404 Not Found" ${p4} />`
+                            return `<img src="${p1}" ${p4} />`
                         }
                         else return `<${reg} alt="404 Not Found"></${reg}>`
 
                     // case 'video':
                     case 'audio':
                         if (!p1) return `${match}`
-                        if (/^\/uploads/.test(p1)) return `<a href="javascript:;" data-src="https://zeqichat.xyz${p1}" data-type="${reg}" controls style="display:flex;align-items:center;gap:5px" ${p4}><img src="https://zeqichat.xyz/images/audio.png" style="height: 16px;line-height:20px;" />语音${match.match(/data-value="(.+?)"/) ? (' · ' + match.match(/data-value="(.+?)"/)[1]) : ''}</a>`;
-                        return `<a href="javascript:;" controls data-type="${reg}" data-src="${p1}" ${p4} style="display:flex;align-items:center;gap:5px"><img src="https://zeqichat.xyz/images/audio.png" style="height: 16px;line-height:20px;" />语音${match.match(/data-value="(.+?)"/) ? (' · ' + match.match(/data-value="(.+?)"/)[1]) : ''}</a>`;
+                        if (/^\/uploads/.test(p1)) return `<a href="javascript:;" data-src="https://zeqichat.xyz${p1}" data-type="${reg}" controls style="display:flex;align-items:center;gap:5px" ${p4}><img src="https://zeqichat.xyz/images/audio.png" style="height: 16px;line-height:20px;cursor:pointer;" />语音${match.match(/data-value="(.+?)"/) ? (' · ' + match.match(/data-value="(.+?)"/)[1]) : ''}</a>`;
+                        return `<a href="javascript:;" controls data-type="${reg}" data-src="${p1}" ${p4} style="display:flex;align-items:center;gap:5px"><img src="https://zeqichat.xyz/images/audio.png" style="height: 16px;line-height:20px;cursor:pointer;" />语音${match.match(/data-value="(.+?)"/) ? (' · ' + match.match(/data-value="(.+?)"/)[1]) : ''}</a>`;
 
                     case 'color':
                         if (!p2) return `${match}`
@@ -58,8 +58,8 @@ function formatMessage(msg) {
                     case 'firework':
                         return `<a href="javascript:;" data-text="${p1}" data-type="${reg}">烟花${p1 ? ' · ' + p1 : ''}</a>`;
 
-                    case 'button':
-                        return `<button contenteditable="false">@${p1}</button>`;
+                    // case 'button':
+                    //     return `<button contenteditable="false">@${p1}</button>`;
                 }
             });
         }

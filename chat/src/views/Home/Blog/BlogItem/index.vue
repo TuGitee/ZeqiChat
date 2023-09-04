@@ -82,7 +82,7 @@
                                 id: comment.id
                             }
                         }" replace>
-                            <div class="blog-comment-list-item-avatar">
+                            <div class="blog-comment-list-item-avatar" @contextmenu.prevent.stop="handleCommentContextMenu($event, comment.id)">
                                 <img :src="`https://zeqichat.xyz${comment.avatar}`" alt="">
                             </div>
                         </router-link>
@@ -220,6 +220,27 @@ export default {
                 isShow: true
             })
         },
+        handleCommentContextMenu(e,id) {
+            this.$store.commit('SET_STATE', {
+                x: e.clientX,
+                y: e.clientY,
+                menuList: [
+                    {
+                        label: '私聊',
+                        command: 'chat',
+                        id,
+                        icon: 'el-icon-chat-line-round'
+                    },
+                    {
+                        label: '动态',
+                        command: 'blog',
+                        id,
+                        icon: 'el-icon-document'
+                    },
+                ],
+                isShow: true
+            })
+        }
     },
     mounted() {
         if (window.innerWidth > 600) {

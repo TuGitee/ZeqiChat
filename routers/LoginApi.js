@@ -25,7 +25,7 @@ router.post('/', async (ctx, next) => {
     let user;
 
     if (password)
-        user = await pool.query('SELECT id,username,email,avatar,online FROM users WHERE email=? AND password=? OR username=? AND password=?', [email, md5(md5(password)+email), email, md5(md5(password)+email)]);
+        user = await pool.query('SELECT id,username,email,avatar,online FROM users WHERE email=? AND password=?', [email, md5(md5(password)+email)]);
     else {
         if (ctx.session.captcha?.captcha != captcha || ctx.session.captcha?.email != email) {
             ctx.body = { ok: 0, msg: '验证码错误' };
@@ -34,7 +34,7 @@ router.post('/', async (ctx, next) => {
         user = await pool.query('SELECT id,username,email,avatar,online FROM users WHERE email=?', [email]);
     }
     if (user[0].length === 0) {
-        ctx.body = { ok: 0, msg: '用户名、邮箱或密码错误' };
+        ctx.body = { ok: 0, msg: '邮箱或密码错误' };
         return;
     }
 
