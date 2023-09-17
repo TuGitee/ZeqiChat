@@ -1,10 +1,8 @@
-<center><h1>ZeqiChat</h1></center>
+# ZeqiChat
 
-<center>择栖Chat，在线聊天系统，支持图片、语音、文件等内容上传，同时允许发表动态及评论。</center>
+择栖Chat，在线聊天系统，支持图片、语音、文件等内容上传，同时允许发表动态及评论。
 
-![Version](https://img.shields.io/github/package-json/version/TuGitee/ZeqiChat)![stars](https://img.shields.io/github/stars/TuGitee/ZeqiChat)![forks](https://img.shields.io/github/forks/TuGitee/ZeqiChat)![last commit](https://img.shields.io/github/last-commit/TuGitee/ZeqiChat)![](https://komarev.com/ghpvc/?username=TuGitee&label=Views&color=0e75b6&style=flat)![language](https://img.shields.io/github/languages/top/TuGitee/ZeqiChat)![license](https://img.shields.io/github/license/TuGitee/ZeqiChat)
-
-
+![Version](https://img.shields.io/github/package-json/version/TuGitee/ZeqiChat) ![stars](https://img.shields.io/github/stars/TuGitee/ZeqiChat) ![forks](https://img.shields.io/github/forks/TuGitee/ZeqiChat) ![last commit](https://img.shields.io/github/last-commit/TuGitee/ZeqiChat) ![views](https://komarev.com/ghpvc/?username=TuGitee&label=Views&color=0e75b6&style=flat) ![language](https://img.shields.io/github/languages/top/TuGitee/ZeqiChat) ![license](https://img.shields.io/github/license/TuGitee/ZeqiChat)
 
 ## 安装依赖
 
@@ -12,8 +10,6 @@
 $ npm i
 $ npm install
 ```
-
-
 
 ## 前后端分离
 
@@ -28,17 +24,11 @@ $ npm run serve
 $ npm run start
 ```
 
-
-
 ## 关于
 
 ### 开源协议
 
 Copyright 2023 [ZeqiChat](https://zeqichat.xyz) (Apache-2.0)
-
-
-
-
 
 >***项目<font color="red">免责</font>声明：***
 >
