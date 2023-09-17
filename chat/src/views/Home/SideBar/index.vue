@@ -95,7 +95,7 @@ export default {
 
 
             &.active {
-                background-color: #C32F0144;
+                background-color: #00000070;
 
                 .icon {
                     color: white;

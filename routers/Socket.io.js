@@ -7,10 +7,10 @@ function start(server) {
     io.on('connect', async (socket) => {
         const payload = JWT.verify(socket.handshake.query.token);
 
-        if(!payload) {
+        if (!payload) {
             socket.emit(WebSocketType.Error, createMessage('system', 'token error'))
         }
-        
+
         // if(Array.from(io.sockets.sockets)?.map(item=>item[1].user)?.filter(item=>item)?.find(item=>item.id === payload.id)){
         //     socket.emit(WebSocketType.Error, createMessage('system', 'user already login'))
         // }
@@ -70,14 +70,38 @@ function start(server) {
                 if (item.user.id === Number(data.to)) {
                     let last = await pool.query('select * from private where from_id=? and to_id=? or to_id=? and from_id=?', [item.user.id, socket.user.id, item.user.id, socket.user.id])
                     last = last[0]
+                    if (!last.length) await pool.query('insert into private (from_id,to_id,message) values (?,?,?)', [socket.user.id, data.to, '我们已经是好友了，一起聊天吧!'])
                     item.emit(WebSocketType.FriendAccept, createMessage(socket.user.username, {
                         avatar: socket.user.avatar,
                         username: socket.user.username,
                         id: socket.user.id,
                         unread: 0,
                         online: 1,
-                        last: last[last.length - 1] ?? '',
+                        last: last.length ? last[last.length - 1] : {
+                            from_id: socket.user.id,
+                            to_id: data.to,
+                            message: '我们已经是好友了，一起聊天吧!',
+                            create_time: +new Date()
+                        },
                     }, socket.user.avatar, String(socket.user.id), +new Date()))
+                } else if(socket.user.id == item.user.id){
+                    let userInfo = await pool.query('select * from users where id=?', [data.to])
+                    userInfo = userInfo[0][0]
+                    let last = await pool.query('select * from private where from_id=? and to_id=? or to_id=? and from_id=?', [item.user.id, socket.user.id, item.user.id, socket.user.id])
+                    last = last[0]
+                    item.emit(WebSocketType.FriendAccept, createMessage(userInfo.username, {
+                        avatar: userInfo.avatar,
+                        username: userInfo.username,
+                        id: data.to,
+                        unread: 0,
+                        online: 1,
+                        last: last.length ? last[last.length - 1] : {
+                            from_id: data.to,
+                            to_id: socket.user.id,
+                            message: '我们已经是好友了，一起聊天吧!',
+                            create_time: +new Date()
+                        },
+                    }, userInfo.avatar, String(data.to), +new Date()))
                 }
             })
         })

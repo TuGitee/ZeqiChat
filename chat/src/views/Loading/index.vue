@@ -1,6 +1,6 @@
 <template>
     <div class="loading">
-        <router-link to="/login">
+        <router-link to="/user">
             <h1 class="title">
                 <span v-for="(text, index) in   title " :key="index" :style="{ '--i': index + 's' }">{{ text }}</span>
             </h1>
@@ -36,10 +36,10 @@ export default {
             this.$router.go(-1);
         },
         goHome() {
-            this.$router.push("/login");
+            this.$router.push("/user");
         },
         goForward() {
-            this.$router.push("/login");
+            this.$router.push("/user");
         }
     }
 }

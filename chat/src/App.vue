@@ -85,6 +85,9 @@ export default {
           a.remove()
           break
       }
+    },
+    getMobile() {
+      this.$store.dispatch('setMobile', window.innerWidth < 600)
     }
   },
   mounted() {
@@ -92,6 +95,7 @@ export default {
     window.addEventListener('contextmenu', (e) => {
       e.preventDefault()
     })
+    window.addEventListener('resize', this.getMobile)
   },
   beforeDestroy() {
     window.removeEventListener('click', this.handleClick)
@@ -218,12 +222,13 @@ export default {
 .el-popper {
   .emoji-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 5px;
 
     .emoji-grid__item {
       cursor: pointer;
       text-decoration: none;
+      color: #333;
     }
   }
 

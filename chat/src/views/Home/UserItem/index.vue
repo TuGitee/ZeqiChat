@@ -14,7 +14,7 @@
             <div class="user-title-content">
                 <p class="user-title-content-header">
                     <span class="user-title-username" v-html="filterMessage(formatMessage(user.username))"></span>
-                    <span class="user-title-time">{{ formatTime(user.last.create_time).slice(0, -3) }}</span>
+                    <span class="user-title-time" v-if="user.last.create_time">{{  formatTime(user.last.create_time).slice(0, -3)}}</span>
                 </p>
                 <p class="user-title-message">
                     <span class="user-title-name" v-if="user.last.username && user.id == WORLD_ID"

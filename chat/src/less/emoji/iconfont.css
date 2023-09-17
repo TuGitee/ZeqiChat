@@ -1,0 +1,125 @@
+@font-face {
+  font-family: "iconfont"; /* Project id  */
+  src: url('./iconfont.ttf') format('truetype');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0 2px;
+}
+
+.icon-shu-smiling-face:before {
+  content: "\e655";
+}
+
+.icon-neutral-face:before {
+  content: "\e656";
+}
+
+.icon-lost:before {
+  content: "\e657";
+}
+
+.icon-confused-face:before {
+  content: "\e658";
+}
+
+.icon-kissing-face:before {
+  content: "\e659";
+}
+
+.icon-releived-face:before {
+  content: "\e65a";
+}
+
+.icon-angry-face:before {
+  content: "\e65b";
+}
+
+.icon-smiling-face:before {
+  content: "\e65c";
+}
+
+.icon-beaming-face:before {
+  content: "\e65d";
+}
+
+.icon-anguished-face:before {
+  content: "\e65e";
+}
+
+.icon-comfounded:before {
+  content: "\e65f";
+}
+
+.icon-slight-smile:before {
+  content: "\e660";
+}
+
+.icon-sleeping:before {
+  content: "\e661";
+}
+
+.icon-downcast-face-sweat:before {
+  content: "\e662";
+}
+
+.icon-frowning-face:before {
+  content: "\e663";
+}
+
+.icon-shock:before {
+  content: "\e664";
+}
+
+.icon-grimacing-face:before {
+  content: "\e665";
+}
+
+.icon-woozy-face:before {
+  content: "\e666";
+}
+
+.icon-tired-face:before {
+  content: "\e667";
+}
+
+.icon-face-with-tounge:before {
+  content: "\e668";
+}
+
+.icon-astonished:before {
+  content: "\e669";
+}
+
+.icon-sad-facebut-releived:before {
+  content: "\e66a";
+}
+
+.icon-smile-wide:before {
+  content: "\e66b";
+}
+
+.icon-savouring-face:before {
+  content: "\e66c";
+}
+
+.icon-grinning-face:before {
+  content: "\e66d";
+}
+
+.icon-sunglasses:before {
+  content: "\e66e";
+}
+
+.icon-zipper-face:before {
+  content: "\e66f";
+}
+
+.icon-squinting-face:before {
+  content: "\e670";
+}
+

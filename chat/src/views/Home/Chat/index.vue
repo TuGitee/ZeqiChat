@@ -49,7 +49,7 @@
             <el-collapse-transition>
                 <div class="home-content-input-tools" v-if="isTool" @click.stop>
                     <div class="tool-item">
-                        <label id="image-send" for="chat-file" @click="accept = 'image/*'" class="icon"><svg
+                        <label id="image-send" for="chat-file" @click.stop="accept = 'image/*'" class="icon"><svg
                                 t="1693136544258" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
                                 p-id="5880" width="25" height="25">
                                 <path
@@ -81,7 +81,7 @@
                         <span class="text">语音</span>
                     </div>
                     <div class="tool-item">
-                        <a class="icon" href="javascript:;" @click="keyboardEmoji">
+                        <a class="icon" href="javascript:;" @click.stop="keyboardEmoji">
                             <svg t="1693128544238" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
                                 p-id="1543" width="20" height="20"
                                 data-spm-anchor-id="a313x.search_index.0.i4.5db53a81QDmxwB">
@@ -96,7 +96,7 @@
                         <span class="text">表情</span>
                     </div>
                     <div class="tool-item">
-                        <label id="file-send" for="chat-file" @click="accept = '*'" class="icon">
+                        <label id="file-send" for="chat-file" @click.stop="accept = '*'" class="icon">
                             <svg t="1693141165392" viewBox="0 0 1260 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
                                 p-id="15906" width="18" height="18">
                                 <path
@@ -135,9 +135,9 @@
                         <el-popover trigger="hover" width="200" placement="top"
                             @click.stop.prevent.native="$refs.textarea.focus()">
                             <div class="emoji-grid">
-                                <a class="emoji-grid__item" v-for="item in emojiList" :key="item.label" href="javascript:;"
-                                    @click.stop.prevent="addEmoji(item)">
-                                    {{ item.value }}
+                                <a class="emoji-grid__item" v-for="item in emojiList" :key="item.icon_id"
+                                    href="javascript:;" @click.stop.prevent="addEmoji(item)">
+                                    <i class="iconfont" :class="`icon-${item.font_class}`"></i>
                                 </a>
                             </div>
 
@@ -193,8 +193,8 @@
 
                 <div class="tool-right">
                     <div class="home-content-input-btns">
-                        <a href="javascript:;" class="round" @click="inputDown" style="background: transparent;"><i
-                                class="el-icon-arrow-down"
+                        <a href="javascript:;" class="round" @click="inputDown"
+                            style="background: transparent;box-shadow: none;"><i class="el-icon-arrow-down"
                                 :style="{ transform: isDown ? 'rotate(180deg)' : 'rotate(0deg)' }"></i></a>
                     </div>
                     <div class="home-content-input-btns">
@@ -241,6 +241,8 @@ import MonitorKeyboard from '@/utils/MonitorKeyboard.js';
 import { WebSocketType, WORLD_ID } from "@/ws/index";
 import { mapState } from "vuex";
 import { Popover, Empty } from 'element-ui';
+import emojiList from "@/less/emoji/iconfont.js";
+
 export default {
     name: 'Chat',
     components: {
@@ -293,40 +295,7 @@ export default {
             controller: null,
             audioSrc: '',
             isAudio: false,
-            emojiList: [{
-                value: '😀',
-                label: '开心',
-            }, {
-                value: '😁',
-                label: '呲牙笑',
-            }, {
-                value: '😂',
-                label: '破涕为笑',
-            }, {
-                value: '😟',
-                label: '伤心',
-            }, {
-                value: '😡',
-                label: '惊讶',
-            }, {
-                value: '😢',
-                label: '哭泣',
-            }, {
-                value: '😭',
-                label: '痛苦',
-            }, {
-                value: '😤',
-                label: '无语',
-            }, {
-                value: '😳',
-                label: '疑惑',
-            }, {
-                value: '😴',
-                label: '睡觉',
-            }, {
-                value: '😎',
-                label: '高兴',
-            }],
+            emojiList,
             isDown: false,
             accept: '*',
             sendMethod: localStorage.getItem('sendMethod') || 'CTRL_ENTER',
@@ -334,8 +303,8 @@ export default {
         }
     },
     methods: {
-        addFriend(){
-            this.$bus.$emit('addFriend');
+        addFriend() {
+            this.$bus.$emit('addFriend', this.to);
         },
         keyboardEmoji() {
             alert('请使用手机自带的Emoji键盘发送表情！')
@@ -352,10 +321,10 @@ export default {
         },
         addEmoji(item) {
             let selection = this.$refs.textarea.selectionStart;
-            this.input = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart) + item.value + this.$refs.textarea.value.slice(this.$refs.textarea.selectionEnd);
+            this.input = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart) + `[${item.name}]` + this.$refs.textarea.value.slice(this.$refs.textarea.selectionEnd);
             this.$nextTick(() => {
                 this.$refs.textarea.focus()
-                this.$refs.textarea.selectionStart = this.$refs.textarea.selectionEnd = selection + 2;
+                this.$refs.textarea.selectionStart = this.$refs.textarea.selectionEnd = selection + item.name.length + 2;
                 this.fitHeight(this.$refs.textarea);
             })
         },
@@ -365,7 +334,10 @@ export default {
                 video: false
             })
 
-            this.mediaRecorder ?? (this.mediaRecorder = new MediaRecorder(stream));
+            const type = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/wav';
+            this.mediaRecorder ?? (this.mediaRecorder = new MediaRecorder(stream, {
+                mimeType: type,
+            }));
             this.mediaRecorder.start();
             let text = '';
 
@@ -383,8 +355,8 @@ export default {
             this.mediaRecorder.ondataavailable = e => {
                 const blob = new Blob([e.data]);
 
-                const file = new File([blob], `${Date.now()}.mp3`, {
-                    type: 'audio/mpeg',
+                const file = new File([blob], `${Date.now()}.${type.split('/')[1]}`, {
+                    type,
                     lastModified: Date.now(),
                     lastModifiedDate: new Date(),
                     name: `${Date.now()}.mp3`
@@ -462,7 +434,7 @@ export default {
             // localStorage.removeItem("user");
             this.$store.dispatch('logout');
             this.server.close();
-            this.$router.push('/login')
+            this.$router.push('/user')
         },
         async handleScroll(e) {
             if (
@@ -762,8 +734,10 @@ export default {
                     this.msgList.push(msg)
                     this.pageDelta++;
                     this.bubbleShow();
+                    this.$emit('changeFriendlist', this.to, comMsg);
                 } else {
                     this.$emit('changeUnread', this.WORLD_ID);
+                    this.$emit('changeFriendlist', this.to, comMsg);
                 }
             } else {
                 if (item.id == this.userId) {
@@ -781,8 +755,6 @@ export default {
                     this.$emit('changeUnread', item.id);
                 }
             }
-
-            this.scrollToBottom(this.$refs.contentList, 'smooth');
 
 
             // const db = await this.openDB("chat", this.version);
@@ -964,10 +936,6 @@ export default {
             }
 
             this.scrollToBottom(this.$refs.contentList);
-
-            this.$nextTick(() => {
-                this.toBottom();
-            })
         },
         openDB(dbName, version = 1) {
             // return new Promise((resolve, reject) => {
@@ -1165,7 +1133,7 @@ export default {
 
         this.server.on(WebSocketType.Error, () => {
             this.$store.dispatch('logout');
-            this.$router.push('/login')
+            this.$router.push('/user')
         });
 
     },
@@ -1505,16 +1473,16 @@ export default {
                     border: none;
                     outline: none;
                     border-radius: 20px;
-                    background-color: #eee;
+                    background-color: #fff;
                     display: flex;
                     justify-content: center;
                     align-items: center;
+                    box-shadow: 3px 2px 15px -12px #000, -9px -8px 20px -5px #fcfcfc;
 
-                    &#voice {
-                        &:active {
-                            box-shadow: inset 3px 2px 15px -12px #000, inset -9px -8px 20px -5px #fff
-                        }
+                    &:active {
+                        box-shadow: inset 3px 2px 15px -12px #000, inset -9px -8px 20px -5px #fcfcfc;
                     }
+
 
                     lable {
                         height: 100%;
@@ -1554,12 +1522,6 @@ export default {
     justify-content: center;
     width: fit-content;
 
-    #voice {
-        &:active {
-            box-shadow: inset 3px 2px 8px -8px #000, inset -9px -8px 20px -5px #fff;
-        }
-    }
-
     button,
     a {
         border-radius: 10px;
@@ -1568,7 +1530,12 @@ export default {
         line-height: 1rem;
         padding: .5rem 1rem;
         user-select: none;
-        background-color: #eee;
+        background-color: #fff;
+        box-shadow: 3px 2px 8px -8px #000, -9px -8px 20px -5px #fff;
+
+        &:active {
+            box-shadow: inset 3px 2px 8px -8px #000, inset -9px -8px 20px -5px #fff;
+        }
     }
 
     &__voice,
@@ -1605,6 +1572,7 @@ export default {
     font-size: 16px;
     line-height: 1.5rem;
     overflow: overlay;
+    background-color: transparent;
 }
 
 .home-content .home-content-file {

@@ -34,19 +34,14 @@ export default [
             if (localStorage.getItem('token')) {
                 next()
             } else {
-                next('/login')
+                next('/user')
             }
         }
     },
     {
-        name: 'login',
-        path: '/login',
-        component: () => import('@/views/Login')
-    },
-    {
-        name: 'register',
-        path: '/register',
-        component: () => import('@/views/Register')
+        name: 'user',
+        path: '/user',
+        component: () => import('@/views/User')
     },
     {
         path: '/',

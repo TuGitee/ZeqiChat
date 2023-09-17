@@ -174,13 +174,18 @@ export default {
       }, 100)
       debounce()
     },
-    submitUser() {
-      if (!this.state.trim()) return;
+    submitUser(e, id) {
       let to;
-      if (this.isAdd)
-        to = this.allUserList.find(user => user.username === this.state)?.id
-      else
-        to = this.friendList.find(user => user.username === this.state)?.id
+      if (id) {
+        to = id
+      }
+      else {
+        if (this.state.trim() && this.isAdd)
+          to = this.allUserList.find(user => user.username === this.state)?.id
+        else
+          to = this.friendList.find(user => user.username === this.state)?.id
+      }
+
       if (!to) {
         this.$notify.error({
           title: '出错',
@@ -189,6 +194,7 @@ export default {
         })
         return
       }
+
       if (this.isAdd) {
         this.$axios.post('/api/friend', {
           from: this.token,
@@ -274,7 +280,6 @@ export default {
       await this.getFriend()
       this.getRequestFriend()
 
-      window.addEventListener('resize', this.getMobile)
 
       this.server.emit(WebSocketType.GroupList);
 
@@ -290,9 +295,7 @@ export default {
       }
     },
 
-    getMobile() {
-      this.$store.dispatch('setMobile', window.innerWidth < 600)
-    }
+    
   },
   async created() {
     let res = await this.$axios.get(`/api/user/${localStorage.getItem('token')}`)
@@ -338,9 +341,10 @@ export default {
       this.isChangeAvatar = true
     })
 
-    this.$bus.$on('addFriend', () => {
+    this.$bus.$on('addFriend', (id) => {
       this.isAdd = true
       this.isCheckRequest = true
+      this.submitUser(null, id)
     })
 
     this.server.on(WebSocketType.Error, (data) => {
@@ -359,7 +363,8 @@ export default {
 
     this.server.on(WebSocketType.FriendAccept, (data) => {
       this.friendList.unshift(data.data)
-      this.sendList.find(item => item.to_id == data.id).accept = 1
+      if (this.sendList.find(item => item.to_id == data.id))
+        this.sendList.find(item => item.to_id == data.id).accept = 1
     })
 
     this.server.on(WebSocketType.FriendReject, (data) => {

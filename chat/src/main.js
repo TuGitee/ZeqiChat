@@ -45,6 +45,8 @@ Vue.component(Firework.name, Firework)
 import preview from 'vue-photo-preview'
 import "vue-photo-preview/dist/skin.css"
 
+import "@/less/emoji/iconfont.css"
+
 const options = {
   fullscreenEl: false,
   closeEl: false,
