@@ -15,62 +15,60 @@
     </div>
     <div class="register-box">
       <h1 class="register-box-title">注册</h1>
-      <p class="has-account">已有账号? <a @click="$emit('changeChoice')" href="javascript:void(0);">点我登录</a></p>
+      <p class="has-account"><i class="el-icon-warning-outline"></i> 已有账号? <a @click="$emit('changeChoice')"
+          href="javascript:void(0);">点我登录</a></p>
       <el-form label-position="left" label-width="max-content" :model="form" :rules="rules" ref="Form"
-        @keyup.enter.native="register">
-        <el-row :gutter="20" width="100%" type="flex" class="row-bg" justify="space-between">
-          <el-col :span="14">
-            <el-form-item prop="email" label="邮箱">
-              <el-input v-model="form.email"></el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="10">
-            <el-form-item prop="username" label="用户名">
-              <el-input v-model="form.username"></el-input>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" width="100%" type="flex" class="row-bg" justify="space-between">
-          <el-col :span="12">
-            <el-form-item prop="password" label="密码">
-              <el-input v-model="form.password" show-password></el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item prop="repassword" label="确认密码">
-              <el-input v-model="form.repassword" show-password>
-              </el-input>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row width="100%" type="flex" class="row-bg" justify="space-between">
-          <el-form-item prop="captcha" label="验证码">
-            <el-input v-model="form.captcha">
-              <el-button slot="append" @click.prevent.stop="getCaptcha" :disabled="seconds >= 0">{{ seconds >= 0 ?
-                `重新发送(${seconds}s)` : "获取验证码" }}</el-button>
-            </el-input>
-          </el-form-item>
-        </el-row>
-        <el-row width="100%" type="flex" class="row-bg" justify="space-between">
-          <el-form-item prop="avatar" label="头像" style="margin-left: 10px;">
-            <el-upload class="avatar-uploader" action="#" :on-change="handleAvatarChange" :on-exceed="handleAvatarExceed"
-              :limit="1" accept="image/*" name="image" :auto-upload="false" ref="upload">
-              <el-button size="small" type="primary">点击上传</el-button>
-              <div slot="tip" class="el-upload__tip" style="line-height: 1;">只能上传图片文件，且不超过2M</div>
-            </el-upload>
-          </el-form-item>
-        </el-row>
+        @keyup.enter.native="register" :show-message="false">
+
+        <el-form-item prop="email" class="top">
+          <el-input v-model="form.email" type="email" placeholder="请输入邮箱"></el-input>
+        </el-form-item>
+
+        <el-form-item prop="captcha">
+          <el-input v-model="form.captcha" placeholder="请输入验证码">
+            <el-button slot="append" @click.prevent.stop="getCaptcha" :disabled="seconds >= 0">{{ seconds >= 0 ?
+              `重新发送(${seconds}s)` : "获取验证码" }}</el-button>
+          </el-input>
+        </el-form-item>
+
+        <el-form-item prop="username" class="top">
+          <el-input v-model="form.username" placeholder="请输入用户名" autocomplete="off"></el-input>
+        </el-form-item>
+
+
+        <el-form-item prop="password">
+          <el-input v-model="form.password" show-password placeholder="请输入密码"></el-input>
+        </el-form-item>
+
+        <el-form-item prop="repassword">
+          <el-input v-model="form.repassword" show-password placeholder="请再次输入密码">
+          </el-input>
+        </el-form-item>
+
+
+
+        <el-form-item prop="avatar" class="top">
+          <el-upload class="avatar-uploader" action="#" :on-change="handleAvatarChange" :on-exceed="handleAvatarExceed"
+            :show-file-list="false" :limit="1" accept="image/*" name="image" :auto-upload="false" ref="upload">
+            <img class="avatar" :src="avatarURL" />
+            <div slot="tip" class="el-upload__tip">上传头像</div>
+          </el-upload>
+        </el-form-item>
+
+        <el-form-item prop="protocol" style="margin-bottom: 0px;" required>
+          <el-checkbox v-model="form.protocol" label="protocol">您已阅读并同意<a href="https://tugitee.github.io/ZeqiChat/protocol.md">择栖Chat服务协议</a></el-checkbox>
+        </el-form-item>
         <el-form-item>
-          <el-button @click="resetForm" type="info">重置</el-button>
           <el-button type="primary" class="form-button" id="register" @click="register">注册</el-button>
         </el-form-item>
+
       </el-form>
     </div>
   </div>
 </template>
 
 <script>
-import { Input, Form, Button, FormItem, Upload, Row, Col } from 'element-ui';
+import { Input, Form, Button, FormItem, Upload, Row, Col, Checkbox } from 'element-ui';
 import { mapState } from 'vuex'
 export default {
   name: "Register",
@@ -83,6 +81,7 @@ export default {
         repassword: "",
         captcha: "",
         avatar: null,
+        protocol: ['protocol']
       },
       rules: {
         email: [
@@ -100,11 +99,13 @@ export default {
         repassword: [
           { required: true, message: "请再次输入密码", trigger: "blur" },
           { min: 6, max: 20, message: "长度在 6 到 20 个字符", trigger: "blur" },
-
         ],
         captcha: [
           { required: true, message: "请输入验证码", trigger: "blur" },
           { min: 6, max: 6, message: "请输入6位验证码", trigger: ["blur", "change"] },
+        ],
+        protocol: [
+          { type: 'array', required: true, message: '请勾选同意协议', trigger: 'change' }
         ]
       },
       seconds: -1,
@@ -167,8 +168,7 @@ export default {
       });
     },
     register() {
-      this.$refs.Form.validate((valid) => {
-        console.log(this.form);
+      this.$refs.Form.validate((valid, error) => {
         if (valid) {
           const formdata = new FormData();
           formdata.append("email", this.form.email);
@@ -207,17 +207,16 @@ export default {
         } else {
           this.$notify.warning({
             title: '警告',
-            message: "请填写完整",
+            dangerouslyUseHTMLString: true,
+            message: '<li>' + Object.entries(error).map(([a, b]) => {
+              return b.map(_ => _.message).join(", ")
+            }).join('</li><li>') + '</li>',
             offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
           });
           this.handleError()
           return;
         }
       });
-    },
-    resetForm() {
-      this.$refs.Form.resetFields()
-      this.$refs.upload.clearFiles()
     },
     handleAvatarChange(file, fileList) {
       this.form.avatar = fileList[0].raw
@@ -241,11 +240,15 @@ export default {
     [Upload.name]: Upload,
     [Row.name]: Row,
     [Col.name]: Col,
+    [Checkbox.name]: Checkbox
   },
   computed: {
     ...mapState({
       isMobile: state => state.mobile.isMobile
-    })
+    }),
+    avatarURL() {
+      return this.form.avatar ? URL.createObjectURL(this.form.avatar) : 'https://zeqichat.xyz/images/default_avatar.png'
+    }
   }
 };
 </script>
@@ -262,6 +265,13 @@ export default {
   backdrop-filter: blur(20px);
   position: relative;
   z-index: 999;
+  gap: 10px;
+  box-shadow: 0 0 15px -5px #333;
+
+  .form-button {
+    width: 100%;
+    height: 42px;
+  }
 
   .register-emoji {
     background-color: white;
@@ -368,20 +378,19 @@ export default {
     height: 100%;
     flex-direction: column;
     justify-content: space-around;
-    box-shadow: 0 0 15px -5px #333;
     border-radius: inherit;
 
     .register-box-title {
       font-size: 30px;
       font-weight: 700;
       text-align: left;
-      margin-bottom: 22px;
+      margin-bottom: 12px;
     }
 
     .has-account {
       font-size: 14px;
       text-align: left;
-      margin-bottom: 12px;
+      margin-bottom: 6px;
 
       a {
         color: #409eff;
@@ -400,38 +409,123 @@ export default {
     }
 
     .el-form {
-      &>.el-form-item {
-        margin-bottom: 0;
+      .el-form-item {
+        width: 100%;
+        margin-bottom: 20px;
+
+        &:last-child {
+          margin-bottom: 0px;
+        }
+
+        &.top {
+          margin-top: 20px;
+        }
+
+        .el-upload {
+          .avatar {
+            border-radius: 50%;
+            filter: drop-shadow(0 0 5px #dedede);
+            object-fit: cover;
+            height: 80px;
+            width: 80px;
+          }
+
+          
+        }
+        /deep/ .el-upload__tip {
+            line-height: 1;
+          }
       }
     }
 
-    .el-form-item {
-      width: 100%;
-    }
+
 
     .el-input {
       /deep/ .el-input__inner {
         background-color: transparent;
       }
     }
+
+
   }
 
   @media screen and (max-width: 600px) {
     border: none !important;
     box-sizing: border-box;
     box-shadow: none !important;
+    height: unset !important;
+    margin-top: var(--safe-top);
 
     .register-box {
       gap: 10px;
 
       .register-box-title {
-        margin-bottom: 0;
-      }
-
-      .has-account {
-        margin-bottom: 0;
+        text-align: center;
+        padding: 30px 0;
       }
     }
+
+    .has-account {
+      text-align: center !important;
+    }
+
+    .another-method {
+      text-align: left;
+      width: fit-content;
+      color: #0080ff;
+    }
+
+
+
+    .el-form-item {
+      margin-bottom: 20px !important;
+
+      &.top {
+        margin-top: 60px;
+      }
+
+      .el-input {
+
+        /deep/ .el-input__inner {
+          padding: 10px 40px;
+          height: 45px;
+          text-align: center;
+          box-shadow: 2px 2px 20px -10px #888;
+        }
+
+        /deep/ .el-input__prefix,
+        /deep/ .el-input__suffix {
+          width: 30px;
+          line-height: 45px;
+        }
+
+        /deep/ .el-input__prefix {
+          left: 8px;
+        }
+
+        /deep/ .el-input__suffix {
+          right: 8px;
+        }
+
+      }
+    }
+
+
+    .el-icon-view.hidden {
+      position: relative;
+
+      &::after {
+        content: "";
+        position: absolute;
+        height: 100%;
+        width: 1px;
+        background-color: #C0C4CC;
+        transform: rotate(45deg) translateX(-50%);
+        left: 50%;
+      }
+    }
+
+
   }
 }
 
@@ -439,5 +533,4 @@ export default {
 #captcha {
   margin-right: 10px;
   width: 50px;
-}
-</style>
+}</style>

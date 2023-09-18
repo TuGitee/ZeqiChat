@@ -15,22 +15,37 @@
     </div>
     <div class="login-box">
       <h1 class="login-box-title">登录</h1>
-      <p class="no-account">没有账号? <a @click="$emit('changeChoice')">点我注册</a></p>
+      <p class="no-account" v-if="!isMobile"><i class="el-icon-warning-outline"></i> 没有账号? <a
+          @click="$emit('changeChoice')">点我注册</a></p>
       <el-form label-position="right" label-width="max-content" :model="form" :rules="rules" ref="Form"
-        @keyup.enter.native="login">
-        <el-form-item prop="email" label="邮箱">
-          <el-input v-model="form.email" @input.capture.stop.prevent.self></el-input>
+        @keyup.enter.native="login" :show-message="false">
+        <el-form-item prop="email" :label="isMobile ? '' : '邮箱'">
+          <el-input type="email" v-model="form.email" placeholder="请输入邮箱"></el-input>
         </el-form-item>
-        <el-form-item prop="password" label="密码" v-if="isPassword">
-          <el-input v-model="form.password" show-password></el-input>
+        <el-form-item prop="password" :label="isMobile ? '' : '密码'" v-if="isPassword">
+          <el-input :type="show ? 'text' : 'password'" clearable v-model="form.password" placeholder="请输入密码">
+            <i slot="prefix" class="el-icon-view" @click="show = !show" :class="{ hidden: !show }"></i>
+          </el-input>
         </el-form-item>
-        <el-form-item prop="captcha" label="验证码" v-else>
+        <el-form-item prop="captcha" :label="isMobile ? '' : '验证码'" v-else>
           <el-input v-model="form.captcha">
             <el-button slot="append" type="button" @click.prevent="getCaptcha" :disabled="seconds >= 0">{{ seconds >= 0
               ? `重新发送(${seconds}s)` : "获取验证码" }}</el-button></el-input>
         </el-form-item>
+
+        <el-form-item prop="protocol" required>
+          <el-checkbox v-model="form.protocol" label="protocol">您已阅读并同意<a href="https://tugitee.github.io/ZeqiChat/protocol.md">择栖Chat服务协议</a></el-checkbox>
+        </el-form-item>
+
         <el-form-item>
-          <el-button @click="isPassword = !isPassword">{{ isPassword ? "使用验证码登录" : "使用密码登录" }}</el-button>
+
+          <el-button v-if="!isMobile" @click="isPassword = !isPassword">{{ isPassword ? "使用验证码登录" : "使用密码登录"
+          }}</el-button>
+          <div class="tool" v-if="isMobile">
+            <p class="another-method" @click="isPassword = !isPassword">{{ isPassword ? "使用验证码登录" : "使用密码登录" }}</p>
+            <p class="no-account"><i class="el-icon-warning-outline"></i> 没有账号? <a @click="$emit('changeChoice')">点我注册</a></p>
+          </div>
+
           <el-button type="primary" class="form-button" id="login" @click="login">登录</el-button>
         </el-form-item>
 
@@ -42,7 +57,7 @@
 </template>
 
 <script>
-import { Input, Form, Button, FormItem } from 'element-ui';
+import { Input, Form, Button, FormItem, Checkbox } from 'element-ui';
 import { mapState } from 'vuex'
 export default {
   name: "Login",
@@ -52,17 +67,19 @@ export default {
         email: "",
         password: "",
         captcha: "",
+        protocol: ['protocol']
       },
       isPassword: true,
       seconds: -1,
       timer: null,
       isAnger: false,
       angerTimer: null,
+      show: false
     };
   },
   methods: {
     login() {
-      this.$refs.Form.validate((valid) => {
+      this.$refs.Form.validate((valid, error) => {
         if (valid) {
           const data = this.isPassword ? { email: this.form.email, password: this.form.password } : { email: this.form.email, captcha: this.form.captcha };
           this.$axios
@@ -87,7 +104,10 @@ export default {
         } else {
           this.$notify.warning({
             title: '警告',
-            message: "请填写完整",
+            dangerouslyUseHTMLString: true,
+            message: '<li>' + Object.entries(error).map(([a, b]) => {
+              return b.map(_ => _.message).join(", ")
+            }).join('</li><li>') + '</li>',
             offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
           });
           this.handleError()
@@ -158,6 +178,7 @@ export default {
     [Form.name]: Form,
     [Button.name]: Button,
     [FormItem.name]: FormItem,
+    [Checkbox.name]: Checkbox
   },
   computed: {
     rules() {
@@ -172,6 +193,9 @@ export default {
         captcha: [
           { required: !this.isPassword, message: '请输入验证码', trigger: 'blur' },
           { min: 6, max: 6, message: '请输入6位验证码', trigger: ['blur', 'change'] }
+        ],
+        protocol: [
+          { type: 'array', required: true, message: '请勾选同意协议', trigger: 'change' }
         ]
       }
     },
@@ -189,7 +213,7 @@ export default {
   border-radius: 10px;
   position: relative;
   width: @width;
-  height: 50%;
+  height: fit-content;
   display: flex;
   backdrop-filter: blur(20px);
   flex-direction: column;
@@ -198,7 +222,22 @@ export default {
 
   .el-input {
     /deep/ .el-input__inner {
+      text-align: center;
       background-color: transparent;
+    }
+
+    .el-icon-view.hidden {
+      position: relative;
+
+      &::after {
+        content: "";
+        position: absolute;
+        height: 100%;
+        width: 1px;
+        background-color: #C0C4CC;
+        transform: rotate(45deg) translateX(-50%);
+        left: 50%;
+      }
     }
   }
 
@@ -306,6 +345,7 @@ export default {
     height: 100%;
     flex-direction: column;
     justify-content: space-around;
+    gap: 10px;
 
     .login-box-title {
       font-size: 30px;
@@ -339,6 +379,10 @@ export default {
       }
     }
 
+    /deep/ .el-input__prefix {
+      width: 30px;
+    }
+
   }
 
   @media screen and (max-width: 600px) {
@@ -346,10 +390,64 @@ export default {
     box-sizing: border-box;
     box-shadow: none !important;
     height: unset !important;
+    margin-top: var(--safe-top);
 
     .login-box {
-      gap: 10px;
+      .login-box-title {
+        text-align: center;
+        padding: 30px 0;
+      }
     }
+
+    .another-method {
+      text-align: left;
+      width: fit-content;
+      color: #0080ff;
+    }
+
+    .form-button {
+      margin-top: 20px;
+      width: 100%;
+      height: 42px;
+    }
+
+    .el-form-item {
+      margin-bottom: 30px;
+
+      .el-input {
+
+        /deep/ .el-input__inner {
+          padding: 10px 40px;
+          height: 45px;
+          text-align: center;
+          box-shadow: 2px 2px 20px -10px #888;
+        }
+
+        /deep/ .el-input__prefix,
+        /deep/ .el-input__suffix {
+          width: 30px;
+          line-height: 45px;
+        }
+
+        /deep/ .el-input__prefix {
+          left: 8px;
+        }
+
+        /deep/ .el-input__suffix {
+          right: 8px;
+        }
+
+      }
+    }
+
+    .tool {
+      display: flex;
+      justify-content: space-between;
+    }
+
+
+
+
   }
 }
 </style>

@@ -16,11 +16,10 @@
 
 <script>
 import { mapState } from 'vuex'
-import Game from '@/components/Game.vue'
 export default {
   name: "User",
   components: {
-    Game,
+    Game: () => import('@/components/Game.vue'),
     Login: () => import('./Login'),
     Register: () => import('./Register')
   },
@@ -42,9 +41,13 @@ export default {
       setTimeout(() => {
         done()
       }, 2000)
+
     },
     leave(el, done) {
-      done()
+      el.style.position = 'absolute'
+      setTimeout(() => {
+        done()
+      }, 2000)
     }
   }
 
@@ -57,7 +60,6 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  overflow: hidden;
 
   .game {
     width: 50%;
@@ -90,18 +92,52 @@ export default {
 
     @keyframes fade-out {
       0% {
-        transform: rotateY(0deg) translateX(0) scale(1);
+        top: 50%;
+        transform: rotateY(0deg) translateX(0) translateY(-50%) scale(1);
+        z-index: -9;
       }
 
       50% {
-        transform: rotateY(10deg) translateX(150px) scale(0.9);
+        top: 50%;
+        transform: rotateY(10deg) translateX(calc(150px + 100%)) translateY(-50%) scale(0.9);
         opacity: 1;
+        z-index: -9;
       }
 
       100% {
-        transform: rotateY(0deg) translateX(-100%) scale(0.8);
+        top: 50%;
+        transform: rotateY(0deg) translateX(-100%) translateY(-50%) scale(0.6);
         z-index: -9;
         opacity: 0;
+      }
+    }
+
+    @media screen and (max-width: 600px) {
+      @keyframes fade-in {
+        0% {
+          transform: rotateY(0deg) translateX(-100%) translateZ(-100px) scale(.8);
+          z-index: -9;
+          opacity: 0;
+        }
+
+        100% {
+          transform: rotateY(0deg) translateX(0) scale(1);
+        }
+      }
+
+      @keyframes fade-out {
+        0% {
+          top: 0;
+          transform: rotateY(0deg) translateX(0) scale(1);
+          z-index: -9;
+        }
+
+        100% {
+          top: 0;
+          transform: rotateY(0deg) translateX(-100%) scale(0.6);
+          z-index: -9;
+          opacity: 0;
+        }
       }
     }
 
@@ -113,6 +149,10 @@ export default {
       animation: fade-out 2s forwards;
     }
 
+  }
+
+  @media screen and (max-width: 600px) {
+    align-items: flex-start;
   }
 
 }
