@@ -56,7 +56,7 @@
         </el-form-item>
 
         <el-form-item prop="protocol" style="margin-bottom: 0px;" required>
-          <el-checkbox v-model="form.protocol" label="protocol">您已阅读并同意<a href="https://tugitee.github.io/ZeqiChat/protocol.md">择栖Chat服务协议</a></el-checkbox>
+          <el-checkbox v-model="form.protocol" label="protocol">您已阅读并同意<a href="https://tugitee.github.io/ZeqiChat/protocol">择栖Chat服务协议</a></el-checkbox>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" class="form-button" id="register" @click="register">注册</el-button>

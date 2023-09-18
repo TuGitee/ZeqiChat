@@ -36,3 +36,4 @@ Copyright 2023 [ZeqiChat](https://zeqichat.xyz) (Apache-2.0)
 >2. 本项目仅供学习使用，请勿使用本项目获利或组织违法活动等。
 >3. 因本项目造成的损失与 [tutu](https://github.com/TuGitee) 无关。
 >4. 本版权与免责声明的最终解释权归 [tutu](https://github.com/TuGitee) 所有。
+>5. 使用本项目请遵循[服务协议](https://tugitee.github.io/ZeqiChat/protocol)。
