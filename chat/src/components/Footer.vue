@@ -13,6 +13,7 @@ footer {
     margin-bottom: 10px;
     line-height: 1;
     position: fixed;
+    z-index: -9999999999999999;
     bottom: 0;
     left: 0;
     right: 0;

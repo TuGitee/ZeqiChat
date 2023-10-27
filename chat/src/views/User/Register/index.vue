@@ -1,21 +1,9 @@
 <template>
   <div class="register">
-    <div class="register-emoji" v-if="!isMobile">
-      <router-link to="/">
-        <div class="face" :class="{ anger: isAnger }">
-          <div class="eyes">
-            <div class="eye"></div>
-            <div class="eye"></div>
-          </div>
-          <transition name="el-fade-in-linear">
-            <div class="shengqi" v-if="isAnger">💢</div>
-          </transition>
-        </div>
-      </router-link>
-    </div>
+    <angry-face ref="face" v-if="!isMobile"></angry-face>
     <div class="register-box">
-      <h1 class="register-box-title">注册</h1>
-      <p class="has-account"><i class="el-icon-warning-outline"></i> 已有账号? <a @click="$emit('changeChoice')"
+      <h1 class="register-box-title no-select">注册</h1>
+      <p class="has-account no-select"><i class="el-icon-warning-outline"></i> 已有账号? <a @click="$emit('changeChoice')"
           href="javascript:void(0);">点我登录</a></p>
       <el-form label-position="left" label-width="max-content" :model="form" :rules="rules" ref="Form"
         @keyup.enter.native="register" :show-message="false">
@@ -51,12 +39,13 @@
           <el-upload class="avatar-uploader" action="#" :on-change="handleAvatarChange" :on-exceed="handleAvatarExceed"
             :show-file-list="false" :limit="1" accept="image/*" name="image" :auto-upload="false" ref="upload">
             <img class="avatar" :src="avatarURL" />
-            <div slot="tip" class="el-upload__tip">上传头像</div>
+            <p slot="tip" class="el-upload__tip no-select">上传头像</p>
           </el-upload>
         </el-form-item>
 
         <el-form-item prop="protocol" style="margin-bottom: 0px;" required>
-          <el-checkbox v-model="form.protocol" label="protocol">您已阅读并同意<a href="https://tugitee.github.io/ZeqiChat/protocol">择栖Chat服务协议</a></el-checkbox>
+          <el-checkbox v-model="form.protocol" label="protocol">您已阅读并同意<a
+              href="https://tugitee.github.io/ZeqiChat/protocol" target="_blank">择栖Chat服务协议</a></el-checkbox>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" class="form-button" id="register" @click="register">注册</el-button>
@@ -114,33 +103,6 @@ export default {
     }
   },
   methods: {
-    handleMouseMove(e) {
-      const eyes = document.querySelectorAll('.eye')
-
-      eyes.forEach(eye => {
-        const x = (eye.getBoundingClientRect().left) + (eye.clientWidth / 2)
-        const y = (eye.getBoundingClientRect().top) + (eye.clientHeight / 2)
-        const atan = Math.atan2(-(e.pageX - x), -(e.pageY - y))
-        const rot = (atan * (180 / Math.PI) * -1) + 0
-        eye.style.transform = `rotate(${rot + 90}deg)`
-      })
-    },
-
-    handleError() {
-      this.isAnger = true
-      window.removeEventListener('mousemove', this.handleMouseMove)
-      document.querySelectorAll('.eye').forEach((eye, index) => {
-        eye.style.transition = 'all .5s'
-        eye.style.transform = `rotate(${180 * (1 - index)}deg)`
-      })
-      setTimeout(() => {
-        this.isAnger = false
-        window.addEventListener('mousemove', this.handleMouseMove)
-        document.querySelectorAll('.eye').forEach(eye => {
-          eye.style.transition = 'none'
-        })
-      }, 1000);
-    },
     getCaptcha() {
       const emailReg = /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/
       if (!emailReg.test(this.form.email)) {
@@ -149,7 +111,7 @@ export default {
           message: "邮箱格式不正确",
           offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
         })
-        this.handleError()
+        this.$refs.face.handleError()
         return
       }
       this.seconds = 60
@@ -164,7 +126,7 @@ export default {
         { email: this.form.email },
       ).catch((error) => {
         console.log(error);
-        this.handleError()
+        this.$refs.face.handleError()
       });
     },
     register() {
@@ -197,12 +159,12 @@ export default {
                   message: res.data.msg,
                   offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 });
-                this.handleError()
+                this.$refs.face.handleError()
               }
             })
             .catch((error) => {
               console.log(error);
-              this.handleError()
+              this.$refs.face.handleError()
             });
         } else {
           this.$notify.warning({
@@ -213,7 +175,7 @@ export default {
             }).join('</li><li>') + '</li>',
             offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
           });
-          this.handleError()
+          this.$refs.face.handleError()
           return;
         }
       });
@@ -226,12 +188,6 @@ export default {
       this.form.avatar = files[0]
     }
   },
-  mounted() {
-    window.addEventListener('mousemove', this.handleMouseMove)
-  },
-  beforeDestroy() {
-    window.removeEventListener('mousemove', this.handleMouseMove)
-  },
   components: {
     [Input.name]: Input,
     [Form.name]: Form,
@@ -240,7 +196,8 @@ export default {
     [Upload.name]: Upload,
     [Row.name]: Row,
     [Col.name]: Col,
-    [Checkbox.name]: Checkbox
+    [Checkbox.name]: Checkbox,
+    AngryFace: ()=> import('@/components/AngryFace.vue')
   },
   computed: {
     ...mapState({
@@ -255,11 +212,10 @@ export default {
 
 <style scoped lang="less">
 .register {
-  @width: 400px;
   @height: fit-content;
   border: 1px solid #ddd;
   border-radius: 10px;
-  width: @width;
+  width: 100%;
   height: @height;
   display: flex;
   backdrop-filter: blur(20px);
@@ -271,104 +227,6 @@ export default {
   .form-button {
     width: 100%;
     height: 42px;
-  }
-
-  .register-emoji {
-    background-color: white;
-    height: 60px;
-    width: 60px;
-    position: absolute;
-    top: 40px;
-    right: 40px;
-    border-radius: 50%;
-
-    .face {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      background-color: #f1c40f;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-
-      &:before {
-        content: "";
-        position: absolute;
-        bottom: 18%;
-        width: 50%;
-        height: 10px;
-        border-bottom-left-radius: 13px;
-        border-bottom-right-radius: 13px;
-        background-color: #b57700;
-        transition: 0.5s;
-      }
-
-      &:hover {
-        background: linear-gradient(180deg, #f44336, #ffcd00);
-
-        &:before {
-          height: 3px;
-          bottom: 22.5%;
-          background-color: #d35400;
-          border-bottom-left-radius: 0;
-          border-bottom-right-radius: 0;
-        }
-      }
-
-      &.anger {
-        background: linear-gradient(180deg, #e74c3c, #ff992c);
-
-        &:before {
-          height: 3px;
-          bottom: 22.5%;
-          border-bottom-left-radius: 0;
-          border-bottom-right-radius: 0;
-          background-color: #c0392b;
-        }
-
-      }
-
-      .shengqi {
-        position: absolute;
-        right: 0;
-        top: 0;
-        transform: translate(25%, -25%);
-        font-size: 20px;
-      }
-
-      .eyes {
-        position: relative;
-        top: -16%;
-        display: flex;
-        flex-wrap: wrap;
-
-        .eye {
-          position: relative;
-          width: 20px;
-          height: 20px;
-          display: block;
-          border-radius: 50%;
-          background-color: white;
-          margin: 0 0.1rem;
-          transition: none !important;
-          transform: rotate(-90deg);
-
-          &:before {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 5px;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: black;
-            transform: translate(-50%, -50%);
-          }
-        }
-      }
-    }
   }
 
   .register-box {
@@ -430,11 +288,12 @@ export default {
             width: 80px;
           }
 
-          
+
         }
+
         /deep/ .el-upload__tip {
-            line-height: 1;
-          }
+          line-height: 1;
+        }
       }
     }
 
@@ -443,6 +302,10 @@ export default {
     .el-input {
       /deep/ .el-input__inner {
         background-color: transparent;
+
+        &::placeholder {
+          user-select: none;
+        }
       }
     }
 

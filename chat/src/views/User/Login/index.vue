@@ -1,22 +1,10 @@
 <template>
   <div class="login">
-    <div class="login-emoji" v-if="!isMobile">
-      <router-link to="/">
-        <div class="face" :class="{ anger: isAnger }">
-          <div class="eyes">
-            <div class="eye"></div>
-            <div class="eye"></div>
-          </div>
-          <transition name="el-fade-in-linear">
-            <div class="shengqi" v-if="isAnger">💢</div>
-          </transition>
-        </div>
-      </router-link>
-    </div>
+    <angry-face ref="face" v-if="!isMobile"></angry-face>
     <div class="login-box">
-      <h1 class="login-box-title">登录</h1>
-      <p class="no-account" v-if="!isMobile"><i class="el-icon-warning-outline"></i> 没有账号? <a
-          @click="$emit('changeChoice')">点我注册</a></p>
+      <h1 class="login-box-title no-select">登录</h1>
+      <p class="no-account no-select" v-if="!isMobile"><i class="el-icon-warning-outline"></i> 没有账号? <a
+          @click="$emit('changeChoice')" href="javascript:void(0);">点我注册</a></p>
       <el-form label-position="right" label-width="max-content" :model="form" :rules="rules" ref="Form"
         @keyup.enter.native="login" :show-message="false">
         <el-form-item prop="email" :label="isMobile ? '' : '邮箱'">
@@ -34,7 +22,7 @@
         </el-form-item>
 
         <el-form-item prop="protocol" required>
-          <el-checkbox v-model="form.protocol" label="protocol">您已阅读并同意<a href="https://tugitee.github.io/ZeqiChat/protocol">择栖Chat服务协议</a></el-checkbox>
+          <el-checkbox v-model="form.protocol" label="protocol">您已阅读并同意<a href="https://tugitee.github.io/ZeqiChat/protocol" target="_blank">择栖Chat服务协议</a></el-checkbox>
         </el-form-item>
 
         <el-form-item>
@@ -72,7 +60,6 @@ export default {
       isPassword: true,
       seconds: -1,
       timer: null,
-      isAnger: false,
       angerTimer: null,
       show: false
     };
@@ -94,11 +81,11 @@ export default {
                   message: res.data.msg,
                   offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 });
-                this.handleError()
+                this.$refs.face.handleError()
               }
             })
             .catch((error) => {
-              this.handleError()
+              this.$refs.face.handleError()
               console.log(error);
             });
         } else {
@@ -110,7 +97,7 @@ export default {
             }).join('</li><li>') + '</li>',
             offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
           });
-          this.handleError()
+          this.$refs.face.handleError()
           return;
         }
       });
@@ -124,7 +111,7 @@ export default {
           message: "邮箱格式不正确",
           offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
         })
-        this.handleError()
+        this.$refs.face.handleError()
         return
       }
       this.seconds = 60
@@ -137,48 +124,14 @@ export default {
       }, 1000);
       this.$axios.get(`/api/login?email=${this.form.email}`)
     },
-
-    handleMouseMove(e) {
-      const eyes = document.querySelectorAll('.eye')
-
-      eyes.forEach(eye => {
-        const x = (eye.getBoundingClientRect().left) + (eye.clientWidth / 2)
-        const y = (eye.getBoundingClientRect().top) + (eye.clientHeight / 2)
-        const atan = Math.atan2(-(e.pageX - x), -(e.pageY - y))
-        const rot = (atan * (180 / Math.PI) * -1) + 0
-        eye.style.transform = `rotate(${rot + 90}deg)`
-      })
-    },
-
-    handleError() {
-      clearTimeout(this.angerTimer)
-      this.isAnger = true
-      window.removeEventListener('mousemove', this.handleMouseMove)
-      document.querySelectorAll('.eye').forEach((eye, index) => {
-        eye.style.transition = 'all .5s'
-        eye.style.transform = `rotate(${180 * (1 - index)}deg)`
-      })
-      this.angerTimer = setTimeout(() => {
-        this.isAnger = false
-        window.addEventListener('mousemove', this.handleMouseMove)
-        document.querySelectorAll('.eye').forEach(eye => {
-          eye.style.transition = 'none'
-        })
-      }, 1000);
-    },
-  },
-  mounted() {
-    window.addEventListener('mousemove', this.handleMouseMove)
-  },
-  beforeDestroy() {
-    window.removeEventListener('mousemove', this.handleMouseMove)
   },
   components: {
     [Input.name]: Input,
     [Form.name]: Form,
     [Button.name]: Button,
     [FormItem.name]: FormItem,
-    [Checkbox.name]: Checkbox
+    [Checkbox.name]: Checkbox,
+    AngryFace: ()=>import('@/components/AngryFace.vue')
   },
   computed: {
     rules() {
@@ -208,11 +161,10 @@ export default {
 
 <style scoped lang="less">
 .login {
-  @width: 400px;
   border: 1px solid #ddd;
   border-radius: 10px;
   position: relative;
-  width: @width;
+  width: 100%;
   height: fit-content;
   display: flex;
   backdrop-filter: blur(20px);
@@ -224,6 +176,10 @@ export default {
     /deep/ .el-input__inner {
       text-align: center;
       background-color: transparent;
+
+      &::placeholder {
+        user-select: none;
+      }
     }
 
     .el-icon-view.hidden {
@@ -237,104 +193,6 @@ export default {
         background-color: #C0C4CC;
         transform: rotate(45deg) translateX(-50%);
         left: 50%;
-      }
-    }
-  }
-
-  .login-emoji {
-    background-color: white;
-    height: 60px;
-    width: 60px;
-    position: absolute;
-    top: 40px;
-    right: 40px;
-    border-radius: 50%;
-
-    .face {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      background-color: #f1c40f;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-
-      &:before {
-        content: "";
-        position: absolute;
-        bottom: 18%;
-        width: 50%;
-        height: 10px;
-        border-bottom-left-radius: 13px;
-        border-bottom-right-radius: 13px;
-        background-color: #b57700;
-        transition: 0.5s;
-      }
-
-      &:hover {
-        background: linear-gradient(180deg, #f44336, #ffcd00);
-
-        &:before {
-          height: 3px;
-          bottom: 22.5%;
-          background-color: #d35400;
-          border-bottom-left-radius: 0;
-          border-bottom-right-radius: 0;
-        }
-      }
-
-      &.anger {
-        background: linear-gradient(180deg, #e74c3c, #ff992c);
-
-        &:before {
-          height: 3px;
-          bottom: 22.5%;
-          border-bottom-left-radius: 0;
-          border-bottom-right-radius: 0;
-          background-color: #c0392b;
-        }
-
-      }
-
-      .shengqi {
-        position: absolute;
-        right: 0;
-        top: 0;
-        transform: translate(25%, -25%);
-        font-size: 20px;
-      }
-
-      .eyes {
-        position: relative;
-        top: -16%;
-        display: flex;
-        flex-wrap: wrap;
-
-        .eye {
-          position: relative;
-          width: 20px;
-          height: 20px;
-          display: block;
-          border-radius: 50%;
-          background-color: white;
-          margin: 0 0.1rem;
-          transition: none !important;
-          transform: rotate(-90deg);
-
-          &:before {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 5px;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: black;
-            transform: translate(-50%, -50%);
-          }
-        }
       }
     }
   }
@@ -373,6 +231,11 @@ export default {
 
     .el-form {
       .el-form-item {
+
+        /deep/ .el-form-item__label {
+          user-select: none;
+        }
+
         &:last-child {
           margin-bottom: 0;
         }

@@ -120,6 +120,10 @@ export default {
   --safe-right: env(safe-area-inset-right);
 }
 
+.no-select {
+  user-select: none;
+}
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

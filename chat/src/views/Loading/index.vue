@@ -1,10 +1,12 @@
 <template>
     <div class="loading">
+
         <router-link to="/user">
             <h1 class="title">
                 <span v-for="(text, index) in   title " :key="index" :style="{ '--i': index + 's' }">{{ text }}</span>
             </h1>
         </router-link>
+
         <a href="https://zeqi.tech">
             <p class="subtitle">
                 <span v-for="(text, index) in subTitle" :key="index" :style="{ '--i': index + 's' }">{{ text }}</span>

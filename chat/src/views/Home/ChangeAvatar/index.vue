@@ -116,6 +116,9 @@ export default {
             this.$emit("cancel")
         }
     },
+    mounted(){
+        this.username = this.preName
+    }
 }
 </script>
 

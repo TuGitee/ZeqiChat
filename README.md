@@ -4,6 +4,10 @@
 
 ![Version](https://img.shields.io/github/package-json/version/TuGitee/ZeqiChat) ![stars](https://img.shields.io/github/stars/TuGitee/ZeqiChat) ![forks](https://img.shields.io/github/forks/TuGitee/ZeqiChat) ![last commit](https://img.shields.io/github/last-commit/TuGitee/ZeqiChat) ![views](https://komarev.com/ghpvc/?username=TuGitee&label=Views&color=0e75b6&style=flat) ![language](https://img.shields.io/github/languages/top/TuGitee/ZeqiChat) ![license](https://img.shields.io/github/license/TuGitee/ZeqiChat)
 
+## 项目体验
+
+链接：[择栖Chat](https://zeqichat.xyz)
+
 ## 安装依赖
 
 ```shell
