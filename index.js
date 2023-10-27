@@ -8,9 +8,9 @@ const JWT = require('./utils/JWT');
 const cors = require('koa2-cors');
 const fs = require('fs')
 
-// const http = require('http')
+const http = require('http')
 
-const https = require('https')
+// const https = require('https')
 // const sslify = require('koa-sslify').default
 
 // const options = {
@@ -19,7 +19,9 @@ const https = require('https')
 // }
 // const server = https.createServer(options, app.callback());
 
-const server = https.createServer({}, app.callback());
+const server = http.createServer(options, app.callback());
+
+// const server = https.createServer({}, app.callback());
 
 // app.use(sslify())
 
