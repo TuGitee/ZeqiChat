@@ -8,18 +8,18 @@ const JWT = require('./utils/JWT');
 const cors = require('koa2-cors');
 const fs = require('fs')
 
-// const http = require('http')
+const http = require('http')
 
-const https = require('https')
+// const https = require('https')
 const sslify = require('koa-sslify').default
 
 // const options = {
 //  key: fs.readFileSync('./config/zeqichat.xyz.key'),
 //  cert: fs.readFileSync('./config/zeqichat.xyz.pem'),
 // }
-const server = https.createServer(options, app.callback());
+// const server = https.createServer(options, app.callback());
 
-// const server = http.createServer({}, app.callback());
+const server = http.createServer({}, app.callback());
 
 // const server = https.createServer({}, app.callback());
 
@@ -93,4 +93,6 @@ app.use(async (ctx, next) => {
 const start = require('./routers/Socket.io');
 start(server);
 
-server.listen(3000, '0.0.0.0');
+server.listen(3000, '0.0.0.0', () => {
+    console.log('server is running on port 3000')
+});
