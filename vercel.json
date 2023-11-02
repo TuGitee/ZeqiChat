@@ -14,8 +14,7 @@
         "POST",
         "PUT",
         "DELETE"
-      ],
-      "dest": "index.js"
+      ]
     }
   ]
 }
