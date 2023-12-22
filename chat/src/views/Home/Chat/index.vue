@@ -7,7 +7,7 @@
         <transition name="el-fade-in">
             <Firework :text="text" v-if="isFirework"></Firework>
         </transition>
-        <audio :src="audioSrc" @play="play" @pause="pause" ref="audio" @ended="ended"></audio>
+        <audio :src="audioSrc" @play="play" @pause="pause" ref="audio" @ended="ended" id="audio"></audio>
         <div class=" home-content-title">
             <a class="home-content-title-back" id="back" href="javascript:;" v-if="isMobile" @click="goBack"></a>
             <router-link :to="{
@@ -16,7 +16,7 @@
                     id: to
                 }
             }" class="home-content-title-box">
-                <img :src="`https://zeqichat.xyz${toAvatar}`" class="home-content-title-img" v-if="toAvatar" alt="">
+                <img :src="`${APP_MEDIA_URL}${toAvatar}`" class="home-content-title-img" v-if="toAvatar" alt="">
                 <span class="home-content-title-name" v-html="filterMessage(formatMessage(toName))"></span>
             </router-link>
             <a id="logout" href="javascript:;" @click="logout">退出</a>
@@ -26,7 +26,7 @@
                 <div class=" home-content-content-item__end" v-if="scrollFlag && msgList.length">消息到底了，快去和TA聊天吧！</div>
             </el-collapse-transition>
             <div class="home-content-content-item__end" v-if="!messageEnd">消息加载中...</div>
-            <ChatItem v-for="msg in msgList" :key="msg.msg_id" :msg="msg"></ChatItem>
+            <ChatItem v-for="msg in msgList" :key="msg.msg_id" :msg="msg" :isUserName="to === WORLD_ID"></ChatItem>
             <div class="bubble" v-if="unread_msg" @click="bubbleClick" :style="{ bottom: isDown ? '80px' : '220px' }">{{
                 unread_msg }}</div>
         </div>
@@ -206,7 +206,6 @@
                                         :class="{ 'el-icon-check': sendMethod == 'ENTER' }"></i>Enter发送</li>
                             </ul>
 
-
                             <button id="chat-send" @touchstart.prevent="send" @click="send" @contextmenu.prevent.stop
                                 slot="reference">发送</button>
                         </el-popover>
@@ -242,9 +241,11 @@ import { WebSocketType, WORLD_ID } from "@/ws/index";
 import { mapState } from "vuex";
 import { Popover, Empty } from 'element-ui';
 import emojiList from "@/less/emoji/iconfont.js";
+import MixinURL from '@/mixins/url'
 
 export default {
     name: 'Chat',
+    mixins: [MixinURL],
     components: {
         ChangeAvatar,
         Upload,
@@ -556,7 +557,7 @@ export default {
 
             if (!this.input.trim()) {
                 this.$message.warning({
-                    message: '发送内容不能为空!',
+                    message: '发送内容不能为空',
                     offset: parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-top"))
                 });
                 return;
@@ -826,7 +827,7 @@ export default {
                     },
                 })
                 .then((res) => {
-                    const msg = type === "image" ? `<img src="${res.data.image}"/>` : `[${res.data.file.replace("/uploads/", "")}](${'https://zeqichat.xyz' + res.data.file})`;
+                    const msg = type === "image" ? `<img src="${res.data.image}"/>` : `[${res.data.file.replace("/uploads/", "")}](${this.APP_MEDIA_URL + res.data.file})`;
                     if (this.to == this.WORLD_ID) {
                         this.server.emit(
                             WebSocketType.GroupChat,
@@ -986,6 +987,7 @@ export default {
         ended() {
             this.isAudio = false
             this.$refs.audio?.pause()
+            this.$bus.$emit('audiostop', this.audioSrc)
         },
         play() {
             this.$bus.$emit('audioplay', this.audioSrc)

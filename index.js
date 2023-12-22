@@ -25,10 +25,26 @@ const server = http.createServer({}, app.callback());
 
 // app.use(sslify())
 
-app.use(cors({
-    credentials: true,
-    origin: ctx => ctx.header.origin
-}))
+app.use(async (ctx, next) => {
+    ctx.set('Access-Control-Allow-Origin', 'http://localhost:8080');
+    ctx.set('Access-Control-Allow-Credentials', 'true');
+    ctx.set('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
+    ctx.set('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
+    if (ctx.method == 'OPTIONS') {
+        ctx.body = 200;
+    } else {
+        await next()
+    }
+})
+
+// app.use(cors({
+//     origin: ctx => ctx.origin,
+//     exposeHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+//     maxAge: 5,
+//     credentials: true,
+//     allowMethods: ['GET', 'POST', 'DELETE'],
+//     allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
+// }))
 
 
 app.use(bodyparser());
@@ -51,7 +67,7 @@ app.use(session({
 
 
 app.use(async (ctx, next) => {
-    if (ctx.url.includes("login")||ctx.url.includes("register")||ctx.url.includes("captcha")||ctx.url.includes("user") && ctx.method === "POST") {
+    if (ctx.url.includes("login") || ctx.url.includes("register") || ctx.url.includes("captcha") || ctx.url.includes("user") && ctx.method === "POST") {
         await next()
         return;
     }

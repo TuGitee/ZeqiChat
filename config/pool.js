@@ -1,13 +1,17 @@
-require('dotenv').config()
+// require('dotenv').config()
 const mysql2 = require('mysql2/promise');
 const pool = mysql2.createPool({
-    host: 'gcp.connect.psdb.cloud/zeqichat',
-    user: 'dpxq2y0z0jw1dlzj0op1',
-    ssl: {
-        rejectUnauthorized: true
-    },
-    password: 'pscale_pw_7ceQMzZayd430xI5UOMl6pTBxwV7Fpn1eWSxzqStSN9',
-    database: 'zeqichat',
+    // host: 'gcp.connect.psdb.cloud/zeqichat',
+    // user: 'dpxq2y0z0jw1dlzj0op1',
+    // ssl: {
+    //     rejectUnauthorized: true
+    // },
+    // password: 'pscale_pw_7ceQMzZayd430xI5UOMl6pTBxwV7Fpn1eWSxzqStSN9',
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: '123',
+    database: 'chatdb',
     connectionLimit: 10,
     waitForConnections: true
 })

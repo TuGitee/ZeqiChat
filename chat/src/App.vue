@@ -224,6 +224,7 @@ export default {
 }
 
 .el-popper {
+
   .emoji-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
@@ -253,9 +254,14 @@ export default {
 
       &:hover {
         background-color: #eee;
-        border-radius: 10px;
+        border-radius: 5px;
       }
     }
   }
+}
+
+.el-message {
+  min-width: unset;
+  padding-right: 20px;
 }
 </style>

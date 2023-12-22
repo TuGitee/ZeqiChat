@@ -2,9 +2,9 @@
     <div class="box" @scroll="scroll">
         <div class="info">
             <div class="info-header"
-                :style="{ background: userInfo.background ? `url('https://zeqichat.xyz${userInfo.background}')  no-repeat center/cover` : `url(${require('@/assets/bg.png')}) no-repeat center/cover` }">
+                :style="{ background: userInfo.background ? `url('${APP_MEDIA_URL}${userInfo.background}')  no-repeat center/cover` : `url(${require('@/assets/bg.png')}) no-repeat center/cover` }">
                 <div class="info-header-avatar">
-                    <img v-if="userInfo.avatar" :src="`https://zeqichat.xyz${userInfo.avatar}`" alt=""
+                    <img v-if="userInfo.avatar" :src="`${APP_MEDIA_URL}${userInfo.avatar}`" alt=""
                         @contextmenu.prevent.stop="handleContextMenu">
                     <span style="mix-blend-mode: difference; color: white;">{{ userInfo.username }}</span>
                 </div>
@@ -47,7 +47,6 @@
 
         <div class="zero" v-if="!blogs.length && blogEnd">
             <el-empty description="暂无动态"></el-empty>
-            <br />
             <router-link to="/home/post" v-if="id === userId"><i
                     class="el-icon-thumb"></i>&nbsp;<span>快去发表动态吧</span></router-link>
         </div>
@@ -62,8 +61,10 @@
 import { Empty, Dialog } from 'element-ui'
 import { mapState } from 'vuex'
 import { WORLD_ID } from '@/ws'
+import MixinURL from '@/mixins/url'
 export default {
     name: "Blog",
+    mixins: [MixinURL],
     components: {
         BlogItem: () => import('./BlogItem'),
         [Empty.name]: Empty,

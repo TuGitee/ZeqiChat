@@ -2,7 +2,7 @@
     <li class="user">
         <div class="user-title">
             <div class="user-title-avatar">
-                <img :src="`https://zeqichat.xyz${user.avatar}`" alt="404 Not Found..." class="user-title-avatar-img">
+                <img :src="APP_MEDIA_URL + `${user.avatar}`" alt="404 Not Found..." class="user-title-avatar-img">
             </div>
 
             <div class="user-title-content">
@@ -35,8 +35,10 @@
 import { filterMessage, formatMessage } from "@/utils/message";
 import formatTime from '@/utils/formatTime.js'
 import { mapState } from "vuex";
+import MixinURL from '@/mixins/url'
 export default {
     name: 'UserItem',
+    mixins: [MixinURL],
     props: {
         user: {
             type: Object,

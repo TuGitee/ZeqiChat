@@ -7,7 +7,7 @@
                     id: userId
                 }
             }" replace>
-                <img :src="'https://zeqichat.xyz' + avatar" class="avatar" />
+                <img :src="APP_MEDIA_URL + avatar" class="avatar" />
                 <p class="username">你好，<span v-text="filterMessage(username)"></span></p>
             </router-link>
         </div>
@@ -18,8 +18,10 @@
 <script>
 import { filterMessage, formatMessage } from "@/utils/message.js";
 import { mapState } from "vuex";
+import MixinURL from '@/mixins/url'
 export default {
     name: 'Header',
+    mixins: [MixinURL],
     computed: {
         ...mapState({
             username: state => state.user.username,

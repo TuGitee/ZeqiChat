@@ -6,7 +6,7 @@ export default [
         children: [
             {
                 name: 'chat',
-                path: 'chat/:id',
+                path: 'chat/:id(\\d+)',
                 component: () => import('@/views/Home/Chat'),
                 meta: {
                     title: '聊天',
@@ -16,7 +16,7 @@ export default [
             },
             {
                 name: "blog",
-                path: 'blog/:id',
+                path: 'blog/:id(\\d+)',
                 component: () => import('@/views/Home/Blog'),
                 meta: {
                     title: '动态',

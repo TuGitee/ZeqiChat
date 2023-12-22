@@ -1,10 +1,10 @@
 <template>
     <div class="chat-item" :class="`chat-item__${userId == msg.id ? 'me' : 'other'}`" @click="timeShow">
-        <img :src="`https://zeqichat.xyz${msg.avatar}`" alt="404 Not Found..." class="chat-item-avatar"
+        <img :src="`${APP_MEDIA_URL}${msg.avatar}`" alt="404 Not Found..." class="chat-item-avatar"
             @contextmenu.prevent.stop="handleContextMenu" @touchstart.prevent="handleLongPressStart('user')"
             @touchend.prevent="handleLongPressEnd('user')">
         <div class="chat-item-msg">
-            <div class="chat-item-msg-username" v-html="filterMessage(formatMessage(msg.username))"></div>
+            <div class="chat-item-msg-username" v-if="isUserName" v-html="filterMessage(formatMessage(msg.username))"></div>
             <div class="chat-item-msg-flex">
                 <button class="chat-item-msg-read" v-if="msg.isSending">
                     <i class="el-icon-loading"></i>
@@ -16,7 +16,7 @@
                     </button>
                     <el-dropdown-menu slot="dropdown">
                         <el-dropdown-item v-for="read in msg.read_list" :key="read.id" :command="read">
-                            <div class="avatar"><img :src="'https://zeqichat.xyz' + read.avatar" /></div>
+                            <div class="avatar"><img :src="APP_MEDIA_URL + read.avatar" /></div>
                             <div class="username">{{ read.username }}</div>
                         </el-dropdown-item>
                     </el-dropdown-menu>
@@ -36,9 +36,11 @@
                     <a v-if="isFile" :href="url" target="_blank">
                         <FileIcon :type="type"></FileIcon>
                     </a>
+                    <Audio v-if="isAudio" :active="active" @click.stop.native="AudioPlay"></Audio>
+                    <div class="audio-play-process" :style="{ '--percent': percent + '%' }"></div>
                     <div class="chat-item-msg-message" v-if="isFile">
                         <div class="content">
-                            <a :href="url" target="_blank">{{ filename }}</a>
+                            <a :href="url" target="_blanAudioPlayk">{{ filename }}</a>
                         </div>
                         <div class="tips" v-if="isFile">该文件/外链安全性未知，请勿随意点击或下载，谨慎操作！</div>
                     </div>
@@ -69,27 +71,38 @@ import { mapState } from "vuex";
 
 import { Dropdown, DropdownMenu, DropdownItem } from "element-ui";
 
+import MixinURL from '@/mixins/url'
+
+import Audio from "@/Icons/Audio.vue";
+
 export default {
     name: 'ChatItem',
+    mixins: [MixinURL],
     data() {
         return {
             timeFlag: false,
             timer: null,
-            text: null,
             time: null,
-            pressTimer: null
+            pressTimer: null,
+            active: false,
+            percent: 0
         }
     },
     components: {
         [Dropdown.name]: Dropdown,
         [DropdownMenu.name]: DropdownMenu,
         [DropdownItem.name]: DropdownItem,
-        FileIcon: () => import('@/components/FileIcon')
+        FileIcon: () => import('@/components/FileIcon'),
+        Audio
     },
     props: {
         msg: {
             type: Object,
             default: () => { }
+        },
+        isUserName: {
+            type: Boolean,
+            default: false
         }
     },
     computed: {
@@ -98,7 +111,7 @@ export default {
             userId: state => state.user.userId
         }),
         isAudio() {
-            return this.msg.message.startsWith('<audio')
+            return this.msg.message?.match(/<audio.*?src="(.+?)"/)
         },
         to() {
             return this.$route.params.id
@@ -115,6 +128,9 @@ export default {
         },
         filename() {
             return this.msg.message.trim().match(/^\[(.*)\]\(.*\)$/) ? this.msg.message.trim().match(/^\[(.*)\]\(.*\)$/)[1] : null
+        },
+        audioURL() {
+            return this.msg.message.match(/<audio.*?src="(.*?)"/) ? this.APP_MEDIA_URL + this.msg.message.match(/<audio.*?src="(.*?)"/)[1] : null
         }
 
     },
@@ -135,6 +151,11 @@ export default {
                 this.timeFlag = false
                 this.timer = null
             }, 2000)
+        },
+        AudioPlay() {
+            this.$bus.$emit('audio', {
+                src: this.audioURL,
+            })
         },
         magic(e) {
             const type = e.target.dataset.type
@@ -308,33 +329,42 @@ export default {
                 })
 
             }
-        }
+        },
+        percentChange(e) {
+            this.percent = (e.target.currentTime / e.target.duration) * 100
+        },
     },
     mounted() {
-        if (this.msg.message?.match(/<audio.*?src="(.+?)"/))
-            this.text = this.msg.message.match(/<audio.*?src="(.*?)"/) ? this.msg.message.match(/<audio.*?src="(.*?)"/)[1] : null
+        if (this.isAudio) {
+            const audio = document.getElementById('audio')
+            this.$bus.$on('audioplay', (src) => {
+                if (src === this.audioURL) {
+                    this.active = true
+                    audio.addEventListener('timeupdate', this.percentChange)
 
-        this.$bus.$on('audioplay', (src) => {
-            if ('https://zeqichat.xyz' + this.text === src || src === this.text) {
-                try {
-                    if (this.$refs.message?.querySelector('img'))
-                        this.$refs.message.querySelector('img').src = 'https://zeqichat.xyz/images/audio.gif'
-                } catch (e) { }
-            } else if (this.text) {
-                try {
-                    if (this.$refs.message?.querySelector('img'))
-                        this.$refs.message.querySelector('img').src = 'https://zeqichat.xyz/images/audio.png'
-                } catch (e) { }
-            }
-        })
-        this.$bus.$on('audiopause', (src) => {
-            if ('https://zeqichat.xyz' + this.text === src || src === this.text) {
-                try {
-                    if (this.$refs.message?.querySelector('img'))
-                        this.$refs.message.querySelector('img').src = 'https://zeqichat.xyz/images/audio.png'
-                } catch (e) { }
-            }
-        })
+                } else if (this.audioURL) {
+                    this.active = false
+                    audio.removeEventListener('timeupdate', this.percentChange)
+
+                }
+            })
+            this.$bus.$on('audiopause', (src) => {
+                if (src === this.audioURL) {
+                    this.active = false
+                    audio.removeEventListener('timeupdate', this.percentChange)
+                }
+            })
+
+            this.$bus.$on('audiostop', (src) => {
+                if (src === this.audioURL) {
+                    this.active = false
+                    this.percent = 0
+                    audio.removeEventListener('timeupdate', this.percentChange)
+                }
+            })
+        }
+
+
     }
 }
 </script>
@@ -433,12 +463,29 @@ export default {
             background: #f7f7f7;
             border-radius: 10px;
             padding: 10px;
+            height: 100%;
             font-size: 14px;
             color: #333;
             text-align: left;
             display: flex;
+            align-items: center;
             gap: 10px;
             user-select: text;
+            position: relative;
+            overflow: hidden;
+
+            .audio-play-process {
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                right: 0;
+                transform-origin: left center;
+                pointer-events: none;
+                transform: scaleX(var(--percent));
+                transition: none !important;
+                background-color: #3331;
+            }
 
             &.file {
                 padding: 15px 10px;
@@ -480,7 +527,7 @@ export default {
             }
 
             &.close {
-                background-color: #ccc;
+                background-color: #ccc6;
             }
         }
     }
@@ -493,8 +540,8 @@ export default {
     }
 
     .chat-item-avatar {
-        height: 50px;
-        width: 50px;
+        height: 40px;
+        width: 40px;
         border-radius: 10px;
         overflow: hidden;
         object-fit: cover;

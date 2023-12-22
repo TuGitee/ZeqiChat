@@ -232,14 +232,16 @@ export default {
     },
     async getFriend() {
       let res = await this.$axios.get(`/api/friend?user=${this.token}`)
-      this.friendList = res.data.data.sort((a, b) => {
+      const { data = [] } = res.data
+      this.friendList = data.sort((a, b) => {
         return new Date(b.last.create_time ?? '1970-01-01') - new Date(a.last.create_time ?? '1970-01-01')
       })
     },
     async getRequestFriend() {
       let res = await this.$axios.get(`/api/friend/request?user=${this.token}`)
-      this.requestList = res.data.data.request.reverse()
-      this.sendList = res.data.data.send.reverse()
+      const { request = [], send = [] } = res.data.data
+      this.requestList = request.reverse()
+      this.sendList = send.reverse()
     },
     dragover(e) {
       e.preventDefault()
@@ -295,7 +297,7 @@ export default {
       }
     },
 
-    
+
   },
   async created() {
     let res = await this.$axios.get(`/api/user/${localStorage.getItem('token')}`)
@@ -307,7 +309,7 @@ export default {
       userId: res.data.data.id
     });
 
-    this.$store.commit("SET_SERVER", `wss://zeqichat.xyz?token=${localStorage.getItem("token")}`)
+    this.$store.commit("SET_SERVER", process.env.VUE_APP_SOCKET_URL + `?token=${localStorage.getItem("token")}`)
 
     this.init();
 

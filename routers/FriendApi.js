@@ -8,7 +8,7 @@ router.get('/', async (ctx, next) => {
     const user = ctx.query.user;
     const user_id = JWT.verify(user).id;
     if (!user_id) ctx.body = { ok: 0, msg: '用户未登录' };
-    const res = await pool.query('SELECT id,username,avatar,online FROM users WHERE id IN (SELECT to_id AS friend_id FROM friend WHERE from_id =? AND accept=1 UNION SELECT from_id AS friend_id FROM friend WHERE to_id =? AND accept=1)', [user_id, user_id]);
+    const res = await pool.query('SELECT id,username,avatar,online,create_time FROM users WHERE id IN (SELECT to_id AS friend_id FROM friend WHERE from_id =? AND accept=1 UNION SELECT from_id AS friend_id FROM friend WHERE to_id =? AND accept=1)', [user_id, user_id]);
     const userList = res[0]
 
     const data = []
@@ -20,8 +20,8 @@ router.get('/', async (ctx, next) => {
         unread: 0,
         avatar: "/images/world.jpg",
         username: "World",
-        last: world[0],
-        online: 1,
+        last: world[0] ?? '',
+        online: 1
     })
     for (let user of userList) {
         let last = await pool.query('select private_msg_id,create_time,from_id,to_id,to_read,recall,CASE WHEN recall = 0 THEN message ELSE NULL END AS message from private where from_id=? and to_id=? or to_id=? and from_id=? ORDER BY private_msg_id DESC limit 1', [user_id, user.id, user_id, user.id])

@@ -37,7 +37,7 @@ function formatMessage(msg) {
                 switch (reg) {
                     case 'img':
                         if (p1) {
-                            if (/^\/uploads/.test(p1)) return `<img src="https://zeqichat.xyz${p1}" alt="404 Not Found" ${p4} />`
+                            if (/^\/uploads/.test(p1)) return `<img src="${process.env.VUE_APP_MEDIA_URL}${p1}" alt="404 Not Found" ${p4} />`
                             return `<img src="${p1}" ${p4} />`
                         }
                         else return `<${reg} alt="404 Not Found"></${reg}>`
@@ -45,8 +45,10 @@ function formatMessage(msg) {
                     // case 'video':
                     case 'audio':
                         if (!p1) return `${match}`
-                        if (/^\/uploads/.test(p1)) return `<a href="javascript:;" data-src="https://zeqichat.xyz${p1}" data-type="${reg}" controls style="display:flex;align-items:center;gap:5px" ${p4}><img src="https://zeqichat.xyz/images/audio.png" style="height: 16px;line-height:20px;cursor:pointer;" />语音${match.match(/data-value="(.+?)"/) ? (' · ' + match.match(/data-value="(.+?)"/)[1]) : ''}</a>`;
-                        return `<a href="javascript:;" controls data-type="${reg}" data-src="${p1}" ${p4} style="display:flex;align-items:center;gap:5px"><img src="https://zeqichat.xyz/images/audio.png" style="height: 16px;line-height:20px;cursor:pointer;" />语音${match.match(/data-value="(.+?)"/) ? (' · ' + match.match(/data-value="(.+?)"/)[1]) : ''}</a>`;
+                        // 读取总共的秒数
+                        const audio_url = process.env.VUE_APP_MEDIA_URL + p1
+                        if (/^\/uploads/.test(p1)) return `<a href="javascript:;" data-src="${audio_url}" data-type="${reg}" controls style="display:flex;align-items:center;gap:5px" ${p4}>语音${match.match(/data-value="(.+?)"/) ? (' · ' + match.match(/data-value="(.+?)"/)[1]) : ''}</a>`;
+                        return `<a href="javascript:;" controls data-type="${reg}" data-src="${p1}" ${p4} style="display:flex;align-items:center;gap:5px">语音${match.match(/data-value="(.+?)"/) ? (' · ' + match.match(/data-value="(.+?)"/)[1]) : ''}</a>`;
 
                     case 'color':
                         if (!p2) return `${match}`

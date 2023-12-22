@@ -7,7 +7,7 @@
                     <div class="change-avatar-content-body-item-title">头像</div>
                     <div class="change-avatar-content-body-item-content">
                         <div class="change-avatar-content-body-item-content-avatar">
-                            <img :src="`https://zeqichat.xyz${avatar}`" v-if="!file" alt="404 Not Found..."
+                            <img :src="`${APP_MEDIA_URL}${avatar}`" v-if="!file" alt="404 Not Found..."
                                 class="change-avatar-content-body-item-content-avatar-img">
                             <img v-else :src="url" alt="404 Not Found..."
                                 class="change-avatar-content-body-item-content-avatar-img" @click="ResetPhoto" />
@@ -22,7 +22,8 @@
                 <div class="change-avatar-content-body-item">
                     <div class="change-avatar-content-body-item-title">用户名</div>
                     <div class="change-avatar-content-body-item-content">
-                        <input type="text" class="change-avatar-content-body-item-content-input" v-model="username" :placeholder="preName">
+                        <input type="text" class="change-avatar-content-body-item-content-input" v-model="username"
+                            :placeholder="preName">
                     </div>
                 </div>
             </div>
@@ -49,8 +50,10 @@
 
 <script>
 import { mapState } from "vuex";
+import MixinURL from '@/mixins/url'
 export default {
     name: 'ChangeAvatar',
+    mixins: [MixinURL],
     data() {
         return {
             loading: false,
@@ -116,7 +119,7 @@ export default {
             this.$emit("cancel")
         }
     },
-    mounted(){
+    mounted() {
         this.username = this.preName
     }
 }
@@ -445,9 +448,9 @@ export default {
     display: inline-block;
     vertical-align: middle;
     position: relative;
+    overflow: hidden;
 
     &:hover {
-        filter: brightness(.6);
 
         &::after {
             content: "Reset";
@@ -455,10 +458,29 @@ export default {
             position: absolute;
             font-weight: bold;
             pointer-events: none;
-            filter: brightness(100);
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.4);
+            left: 0;
+            top: 0;
+            animation: opacity 0.5s forwards;
+
+            @keyframes opacity {
+                0% {
+                    opacity: 0;
+                }
+
+                100% {
+                    opacity: 1;
+                }
+            }
+        }
+
+        img {
+            transform: scale(1.1);
         }
     }
 }

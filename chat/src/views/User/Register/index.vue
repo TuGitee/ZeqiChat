@@ -59,8 +59,10 @@
 <script>
 import { Input, Form, Button, FormItem, Upload, Row, Col, Checkbox } from 'element-ui';
 import { mapState } from 'vuex'
+import MixinURL from '@/mixins/url'
 export default {
   name: "Register",
+  mixins: [MixinURL],
   data() {
     return {
       form: {
@@ -197,14 +199,14 @@ export default {
     [Row.name]: Row,
     [Col.name]: Col,
     [Checkbox.name]: Checkbox,
-    AngryFace: ()=> import('@/components/AngryFace.vue')
+    AngryFace: () => import('@/components/AngryFace.vue')
   },
   computed: {
     ...mapState({
       isMobile: state => state.mobile.isMobile
     }),
     avatarURL() {
-      return this.form.avatar ? URL.createObjectURL(this.form.avatar) : 'https://zeqichat.xyz/images/default_avatar.png'
+      return this.form.avatar ? URL.createObjectURL(this.form.avatar) : this.APP_MEDIA_URL + '/images/default_avatar.png'
     }
   }
 };
@@ -396,4 +398,5 @@ export default {
 #captcha {
   margin-right: 10px;
   width: 50px;
-}</style>
+}
+</style>

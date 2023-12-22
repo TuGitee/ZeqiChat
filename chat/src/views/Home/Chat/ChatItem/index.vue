@@ -1,7 +1,7 @@
 <template>
     <div>
         <TimeItem v-if="msg.delta > 3 * 60 * 1000" :time="msg.create_time"></TimeItem>
-        <MessageItem :msg="msg"></MessageItem>
+        <MessageItem :msg="msg" :isUserName="isUserName"></MessageItem>
     </div>
 </template>
 
@@ -18,6 +18,10 @@ export default {
         msg: {
             type: Object,
             default: () => { }
+        },
+        isUserName: {
+            type: Boolean,
+            default: false
         }
     }
 }

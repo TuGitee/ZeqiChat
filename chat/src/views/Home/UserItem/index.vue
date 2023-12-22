@@ -4,7 +4,7 @@
             <div class="user-title-avatar">
                 <i class="user-title-avatar-online"
                     :style="{ backgroundColor: user.online ? '#43da83' : user.id == userId ? '#43da83' : '#ff5e5e' }"></i>
-                <img :src="`https://zeqichat.xyz${user.avatar}`" alt="404 Not Found..." class="user-title-avatar-img"
+                <img :src="APP_MEDIA_URL + `${user.avatar}`" alt="404 Not Found..." class="user-title-avatar-img"
                     :style="{ filter: user.online ? 'grayscale(0)' : 'grayscale(1)' }">
                 <i class="user-title-avatar-count" v-if="user.id == userId || user.unread">{{ user.id == userId ? "me" :
                     user.unread
@@ -14,7 +14,8 @@
             <div class="user-title-content">
                 <p class="user-title-content-header">
                     <span class="user-title-username" v-html="filterMessage(formatMessage(user.username))"></span>
-                    <span class="user-title-time" v-if="user.last.create_time">{{  formatTime(user.last.create_time).slice(0, -3)}}</span>
+                    <span class="user-title-time" v-if="user.last.create_time">{{ formatTime(user.last.create_time).slice(0,
+                        -3) }}</span>
                 </p>
                 <p class="user-title-message">
                     <span class="user-title-name" v-if="user.last.username && user.id == WORLD_ID"
@@ -33,8 +34,10 @@ import { filterMessage, formatMessage } from "@/utils/message";
 import formatTime from '@/utils/formatTime.js'
 import { mapState } from "vuex";
 import { WORLD_ID } from "@/ws";
+import MixinURL from '@/mixins/url'
 export default {
     name: 'UserItem',
+    mixins: [MixinURL],
     props: {
         user: {
             type: Object,
